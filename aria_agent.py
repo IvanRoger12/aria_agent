@@ -1,4 +1,3 @@
-# app.py
 import streamlit as st
 import json
 import time
@@ -21,131 +20,236 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# =========================
-# CSS — FOND BLEU / TEXTE BLANC / SELECT BLEU
-# =========================
+# CSS personnalisé avec design premium
 st.markdown("""
 <style>
-    :root{
-        --blue-bg:#0b1e3a;         /* Bleu foncé (fond) */
-        --blue:#1d4ed8;            /* Bleu principal (accents) */
-        --blue-2:#2563eb;          /* Bleu secondaire */
-        --white:#ffffff;           /* Texte blanc */
-        --white-soft:#e5e7eb;
-        --card: rgba(255,255,255,0.04);
-        --card-border: rgba(255,255,255,0.18);
-        --muted:#cbd5e1;
-        --green:#10b981;
-        --red:#ef4444;
-        --violet:#8b5cf6;
-    }
-
-    /* Fond global bleu + texte blanc */
+    /* Fond bleu premium avec dégradé */
     .main {
-        background: var(--blue-bg) !important;
-        color: var(--white) !important;
+        background: linear-gradient(135deg, #0c1d3d 0%, #1e3a8a 50%, #0c1d3d 100%);
+        color: #ffffff;
     }
-
-    /* Forcer tous les titres en BLANC, GRAS, très lisibles */
+    
+    .stApp {
+        background: linear-gradient(135deg, #0c1d3d 0%, #1e3a8a 50%, #0c1d3d 100%);
+    }
+    
+    /* Arrière-plan avec effet de circuit imprimé */
+    .main::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+            radial-gradient(circle at 20% 30%, rgba(37, 99, 235, 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 40% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: -1;
+    }
+    
+    .main::after {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0.4;
+        animation: circuitFlow 20s infinite linear;
+    }
+    
+    @keyframes circuitFlow {
+        0% { background-position: 0 0; }
+        100% { background-position: 40px 40px; }
+    }
+    
+    /* Amélioration de la lisibilité */
     h1, h2, h3, h4, h5, h6 {
-        color: var(--white) !important;
-        font-weight: 800 !important;
-        letter-spacing: .2px !important;
-        text-shadow: 0 0 6px rgba(0,0,0,.35) !important;
-        -webkit-text-fill-color: var(--white) !important;
+        color: #ffffff !important;
+        font-weight: 700;
+        text-shadow: 0 0 15px rgba(96, 165, 250, 0.7);
     }
-
-    /* Paragraphes et textes par défaut en blanc doux pour lisibilité */
+    
     p, span, div {
-        color: var(--white) !important;
+        color: #f0f9ff !important;
     }
-
-    /* Cartes / panneaux (même structure) mais plus nettes sur fond bleu */
-    .metric-card, .analysis-card, .thought-bubble {
-        background: var(--card) !important;
-        backdrop-filter: blur(6px) !important;
-        -webkit-backdrop-filter: blur(6px) !important;
-        border: 1px solid var(--card-border) !important;
-        border-radius: 16px !important;
-        padding: 20px !important;
-        box-shadow: 0 12px 28px rgba(0,0,0,.35) !important;
-    }
-
-    /* Boutons: dégradé bleu → lisible sur fond bleu */
-    .stButton > button {
-        background: linear-gradient(135deg, var(--blue), var(--blue-2)) !important;
-        color: var(--white) !important;
-        border: none !important;
-        border-radius: 10px !important;
-        font-weight: 700 !important;
-        box-shadow: 0 10px 24px rgba(37, 99, 235, .35) !important;
-        transition: transform .15s ease, box-shadow .15s ease !important;
-    }
-    .stButton > button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 16px 34px rgba(29, 78, 216, .45) !important;
-    }
-
-    /* Bulles de pensée : bord bleu, fond à peine bleuté */
-    .thought-bubble {
-        background: rgba(37, 99, 235, 0.08) !important;
-        border-left: 5px solid var(--blue) !important;
-        animation: slideIn .45s ease-out !important;
-    }
-    @keyframes slideIn { from{opacity:0; transform:translateX(-14px);} to{opacity:1; transform:translateX(0);} }
-
-    /* Indicateur de statut (blink doux) */
-    .status-indicator {
-        width: 12px; height: 12px; border-radius: 50%;
-        display: inline-block; margin-right: 8px;
-        animation: statusBlink 1.5s infinite;
-        box-shadow: 0 0 10px currentColor;
-    }
-    @keyframes statusBlink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: .4; } }
-
-    /* Avatar agent (garde l’animation pulse existante si status != idle) */
-    .agent-thinking {
-        background: linear-gradient(45deg, var(--blue), var(--violet)) !important;
-        animation: pulse 2s infinite !important;
-        border-radius: 15px !important;
-        padding: 15px !important;
-    }
-    @keyframes pulse { 0% { opacity: .85; } 50% { opacity: 1; } 100% { opacity: .85; } }
-
-    /* Sélecteur (Target Sector) — CONTRASTE MAX : fond blanc, texte bleu */
+    
+    /* Correction du problème du selectbox */
     .stSelectbox > div > div {
-        background: #ffffff !important;
-        color: var(--blue) !important;
-        border: 1px solid rgba(255,255,255,0.25) !important;
-        border-radius: 10px !important;
-        font-weight: 700 !important;
-        box-shadow: 0 6px 18px rgba(0,0,0,.25) !important;
+        background-color: rgba(30, 58, 138, 0.9) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(96, 165, 250, 0.7) !important;
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
     }
-    /* Texte dans le placeholder + tag + valeurs */
-    .stSelectbox div[data-baseweb="select"] * {
-        color: var(--blue) !important;
-        -webkit-text-fill-color: var(--blue) !important;
+    
+    .stSelectbox > div > div:hover {
+        border: 1px solid rgba(96, 165, 250, 1) !important;
     }
-    /* Options du menu déroulant (forçage générique) */
-    .stSelectbox ul, .stSelectbox li, .stSelectbox [role="option"] {
-        color: var(--blue) !important;
-        background: #ffffff !important;
+    
+    /* Options du dropdown */
+    .stSelectbox [role="listbox"] {
+        background-color: rgba(30, 58, 138, 0.95) !important;
+        border: 1px solid rgba(96, 165, 250, 0.7) !important;
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
     }
-
-    /* Sous-titres de sections secondaires: accent bleu */
-    .section-accent {
-        color: var(--white) !important;
-        font-weight: 800 !important;
-        border-bottom: 2px solid var(--blue) !important;
-        padding-bottom: 6px !important;
+    
+    .stSelectbox [role="option"] {
+        color: #ffffff !important;
+        background-color: transparent !important;
     }
-
-    /* Petites améliorations de lisibilité métriques */
-    .metric-card p:first-child { color: var(--white-soft) !important; }
-    .metric-card p:last-child { color: var(--white) !important; font-weight: 800 !important; }
-
-    /* Réglage annotations Plotly en blanc (backup) */
-    .js-plotly-plot * { color: var(--white) !important; }
+    
+    .stSelectbox [role="option"]:hover {
+        background-color: rgba(59, 130, 246, 0.3) !important;
+    }
+    
+    /* Boutons premium */
+    .stButton > button {
+        background: linear-gradient(45deg, #2563eb, #3b82f6) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 12px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 0 20px rgba(37, 99, 235, 0.7) !important;
+        padding: 12px 24px !important;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0 0 30px rgba(37, 99, 235, 0.9) !important;
+        background: linear-gradient(45deg, #1d4ed8, #2563eb) !important;
+    }
+    
+    /* Cartes avec effet glassmorphism premium */
+    .metric-card, .analysis-card, .thought-bubble {
+        background: rgba(30, 58, 138, 0.7) !important;
+        backdrop-filter: blur(15px) !important;
+        border: 1px solid rgba(96, 165, 250, 0.5) !important;
+        border-radius: 20px !important;
+        padding: 25px !important;
+        margin: 15px 0 !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .metric-card:hover, .analysis-card:hover, .thought-bubble:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(96, 165, 250, 0.8) !important;
+    }
+    
+    /* Animation de pulsation pour l'agent */
+    .agent-thinking {
+        background: linear-gradient(45deg, #1e40af, #3730a3) !important;
+        animation: pulse 2s infinite !important;
+        border-radius: 20px !important;
+        padding: 20px !important;
+        margin: 15px 0 !important;
+        box-shadow: 0 0 25px rgba(79, 70, 229, 0.7) !important;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 0.8; box-shadow: 0 0 20px rgba(79, 70, 229, 0.7); }
+        50% { opacity: 1; box-shadow: 0 0 35px rgba(79, 70, 229, 0.9); }
+        100% { opacity: 0.8; box-shadow: 0 0 20px rgba(79, 70, 229, 0.7); }
+    }
+    
+    /* Bulles de pensée premium */
+    .thought-bubble {
+        background: rgba(30, 64, 175, 0.75) !important;
+        border-left: 5px solid #3b82f6 !important;
+        padding: 20px !important;
+        margin: 15px 0 !important;
+        border-radius: 0 15px 15px 0 !important;
+        animation: slideIn 0.5s ease-out !important;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    /* Indicateur de statut premium */
+    .status-indicator {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 10px;
+        animation: statusBlink 1.5s infinite;
+        box-shadow: 0 0 12px rgba(96, 165, 250, 0.9);
+    }
+    
+    @keyframes statusBlink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0.4; }
+    }
+    
+    /* Barre de défilement stylisée */
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(30, 58, 138, 0.4);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(45deg, #3b82f6, #60a5fa);
+        border-radius: 10px;
+        border: 2px solid rgba(30, 58, 138, 0.3);
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(45deg, #2563eb, #3b82f6);
+    }
+    
+    /* Effet de surbrillance pour le texte */
+    .highlight {
+        background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: bold;
+        text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    }
+    
+    /* Centrage des éléments */
+    .centered {
+        text-align: center;
+        margin: 0 auto;
+        display: block;
+    }
+    
+    /* Jauge de confiance stylisée */
+    .confidence-gauge {
+        background: rgba(30, 58, 138, 0.7);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(96, 165, 250, 0.5);
+        border-radius: 20px;
+        padding: 25px;
+        margin: 20px auto;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        max-width: 500px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -153,7 +257,7 @@ st.markdown("""
 class AgentThought:
     content: str
     timestamp: datetime
-    thought_type: str = "analysis"  # analysis, insight, recommendation
+    thought_type: str = "analysis"
     confidence: float = 0.0
 
 @dataclass
@@ -162,23 +266,17 @@ class MarketInsight:
     description: str
     impact_score: float
     confidence: float
-    category: str  # opportunity, threat, trend
+    category: str
 
 class ARIAAgent:
-    """
-    ARIA - Autonomous Research & Intelligence Agent
-    Agent IA autonome pour l'analyse stratégique de marché
-    """
-    
     def __init__(self, language: str = "fr"):
         self.language = language
-        self.status = "idle"  # idle, thinking, analyzing, completed
+        self.status = "idle"
         self.thoughts = []
         self.current_analysis = None
         self.confidence_level = 0.0
         self.neural_activity = 0
         
-        # Traductions
         self.translations = {
             "fr": {
                 "agent_name": "ARIA",
@@ -234,7 +332,6 @@ class ARIAAgent:
             }
         }
         
-        # Données d'analyse simulées réalistes
         self.market_data = {
             "FinTech": {
                 "fr": {
@@ -269,20 +366,16 @@ class ARIAAgent:
         }
     
     def get_translation(self, key: str) -> str:
-        """Obtient la traduction pour une clé donnée"""
         return self.translations[self.language].get(key, key)
     
     async def activate(self, sector: str) -> None:
-        """Active l'agent pour analyser un secteur"""
         self.status = "thinking"
         self.thoughts = []
         self.neural_activity = random.randint(800, 900)
         
-        # Simulation du processus de pensée de l'agent
         thoughts = self.get_translation("thoughts")
         
         for i, thought_text in enumerate(thoughts):
-            # Simulation d'un délai de réflexion variable
             await asyncio.sleep(random.uniform(0.8, 1.5))
             
             thought = AgentThought(
@@ -293,7 +386,6 @@ class ARIAAgent:
             
             self.thoughts.append(thought)
             
-            # Changement de statut pendant le processus
             if i == 2:
                 self.status = "analyzing"
             elif i == len(thoughts) - 1:
@@ -301,24 +393,22 @@ class ARIAAgent:
                 self.current_analysis = self.market_data.get(sector, {}).get(self.language, {})
                 self.confidence_level = random.uniform(85, 95)
             
-            # Simulation de l'activité neuronale
             self.neural_activity += random.randint(-30, 50)
     
     def generate_confidence_gauge(self) -> go.Figure:
-        """Génère un graphique de confiance (garde la jauge)"""
         fig = go.Figure(go.Indicator(
             mode = "gauge+number+delta",
             value = self.confidence_level,
             domain = {'x': [0, 1], 'y': [0, 1]},
-            title = {'text': "Confidence Level", 'font': {'color': 'white'}},
-            delta = {'reference': 80, 'font': {'color': 'white'}},
+            title = {'text': "Niveau de Confiance", 'font': {'color': 'white', 'size': 20}},
+            delta = {'reference': 80, 'font': {'color': 'white', 'size': 16}},
             gauge = {
-                'axis': {'range': [None, 100], 'tickcolor': 'white', 'tickfont': {'color': 'white'}},
-                'bar': {'color': "#1d4ed8"},
+                'axis': {'range': [None, 100], 'tickcolor': 'white', 'tickfont': {'color': 'white', 'size': 14}},
+                'bar': {'color': "#3b82f6"},
                 'steps': [
-                    {'range': [0, 50], 'color': "#1e3a8a"},
-                    {'range': [50, 80], 'color': "#1d4ed8"},
-                    {'range': [80, 100], 'color': "#22c55e"}
+                    {'range': [0, 50], 'color': "#ef4444"},
+                    {'range': [50, 80], 'color': "#f59e0b"},
+                    {'range': [80, 100], 'color': "#10b981"}
                 ],
                 'threshold': {
                     'line': {'color': "#8b5cf6", 'width': 4},
@@ -331,72 +421,15 @@ class ARIAAgent:
         fig.update_layout(
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            font={'color': "white", 'family': "Arial"},
-            height=300
-        )
-        
-        return fig
-    
-    def generate_neural_network_viz(self) -> go.Figure:
-        """Génère une visualisation du réseau neuronal (inchangé)"""
-        # Positions des noeuds
-        n_nodes = 20
-        x = [random.uniform(0, 10) for _ in range(n_nodes)]
-        y = [random.uniform(0, 10) for _ in range(n_nodes)]
-        
-        # Connexions aléatoires
-        edge_x = []
-        edge_y = []
-        
-        for i in range(n_nodes):
-            for j in range(i+1, min(i+4, n_nodes)):  # Connexions locales
-                if random.random() > 0.6:  # 40% de chance de connexion
-                    edge_x.extend([x[i], x[j], None])
-                    edge_y.extend([y[i], y[j], None])
-        
-        edge_trace = go.Scatter(
-            x=edge_x, y=edge_y,
-            line=dict(width=0.5, color='#1d4ed8'),
-            hoverinfo='none',
-            mode='lines',
-            opacity=0.6
-        )
-        
-        node_trace = go.Scatter(
-            x=x, y=y,
-            mode='markers',
-            hoverinfo='text',
-            marker=dict(
-                size=8,
-                color='#60a5fa',
-                line=dict(width=2, color='#1d4ed8')
-            )
-        )
-        
-        fig = go.Figure(data=[edge_trace, node_trace])
-        fig.update_layout(
-            showlegend=False,
-            hovermode='closest',
-            margin=dict(b=20,l=5,r=5,t=40),
-            annotations=[ dict(
-                text="Neural Network Activity",
-                showarrow=False,
-                xref="paper", yref="paper",
-                x=0.005, y=-0.002,
-                xanchor='left', yanchor='bottom',
-                font=dict(color="white", size=12)
-            )],
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)"
+            font={'color': "white", 'family': "Arial", 'size': 16},
+            height=350,
+            margin=dict(l=30, r=30, t=60, b=20)
         )
         
         return fig
 
 # Interface principale
 def main():
-    # Initialisation de l'agent
     if 'agent' not in st.session_state:
         st.session_state.agent = ARIAAgent()
     
@@ -406,22 +439,22 @@ def main():
     agent = st.session_state.agent
     agent.language = st.session_state.language
     
-    # Header futuriste (structure conservée)
-    col1, col2, col3 = st.columns([6, 1, 1])
+    # Header centré avec design premium
+    st.markdown(f"""
+    <div style='text-align: center; margin-bottom: 40px;'>
+        <h1 style='background: linear-gradient(45deg, #3b82f6, #60a5fa, #93c5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 3.5rem; margin: 0; font-weight: 800;'>
+            🧠 {agent.get_translation('agent_name')}
+        </h1>
+        <p style='color: #dbeafe; font-size: 1.3rem; margin: 10px 0 0 0; font-weight: 400;'>
+            {agent.get_translation('agent_desc')}
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    with col1:
-        st.markdown(f"""
-        <div style='margin-bottom: 30px;'>
-            <h1 style='font-size: 3rem; margin: 0;'>🧠 {agent.get_translation('agent_name')} <span style="opacity:.9;">✨</span></h1>
-            <p style='color: #e5e7eb; font-size: 1.2rem; margin: 0;'>
-                {agent.get_translation('agent_desc')}
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        # Sélecteur de langue
-        lang = st.selectbox("🌐", ["🇫🇷 FR", "🇺🇸 EN"], key="lang_select")
+    # Sélecteur de langue centré
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        lang = st.selectbox("🌐", ["🇫🇷 FR", "🇺🇸 EN"], key="lang_select", index=0)
         new_language = "fr" if "FR" in lang else "en"
         if new_language != st.session_state.language:
             st.session_state.language = new_language
@@ -431,62 +464,54 @@ def main():
     col1, col2 = st.columns([1, 2])
     
     with col1:
-        # Panel de contrôle de l'agent
         st.markdown("""
         <div class='analysis-card'>
-            <h3 class='section-accent' style='text-align: center; margin-bottom: 16px;'>🤖 Agent Control Panel</h3>
+            <h3 style='color: #ffffff; text-align: center; margin-bottom: 25px;'>🤖 Panneau de Contrôle</h3>
         """, unsafe_allow_html=True)
         
-        # Avatar de l'agent avec statut
         status_color = {
             "idle": "#6b7280",
             "thinking": "#f59e0b", 
-            "analyzing": "#1d4ed8",
+            "analyzing": "#3b82f6",
             "completed": "#10b981"
         }.get(agent.status, "#6b7280")
         
         st.markdown(f"""
         <div style='text-align: center; margin: 20px 0;'>
             <div style='position: relative; display: inline-block;'>
-                <div style='width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(45deg, #1d4ed8, #2563eb); display: flex; align-items: center; justify-content: center; margin: 0 auto; {"animation: pulse 2s infinite;" if agent.status != "idle" else ""}'>
-                    <span style='font-size: 2rem;'>🤖</span>
+                <div style='width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(45deg, #3b82f6, #60a5fa); display: flex; align-items: center; justify-content: center; margin: 0 auto; {"animation: pulse 2s infinite;" if agent.status != "idle" else ""}'>
+                    <span style='font-size: 2.5rem;'>🤖</span>
                 </div>
-                <div class='status-indicator' style='position: absolute; bottom: -2px; right: -2px; width: 18px; height: 18px; background: {status_color}; border: 2px solid white;'></div>
+                <div style='position: absolute; bottom: 0; right: 0; width: 25px; height: 25px; border-radius: 50%; background: {status_color}; border: 3px solid #0c1d3d; {"animation: statusBlink 1.5s infinite;" if agent.status in ["thinking", "analyzing"] else ""}'></div>
             </div>
-            <h4 style='margin: 10px 0 5px 0; font-weight:800;'>ARIA</h4>
-            <p style='color: #e5e7eb; font-size: 0.9rem; margin: 0;'>Neural Activity: {agent.neural_activity}</p>
+            <h4 style='color: #ffffff; margin: 15px 0 5px 0;'>{agent.get_translation("agent_name")}</h4>
+            <p style='color: #bfdbfe; font-size: 1rem; margin: 0;'>Activité Neuronale: {agent.neural_activity}</p>
         </div>
         """, unsafe_allow_html=True)
         
-        # Statut de l'agent
         status_text = agent.get_translation(f"status_{agent.status}")
         st.markdown(f"""
-        <div style='background: rgba(29,78,216, 0.18); border:1px solid rgba(255,255,255,.15); border-radius: 10px; padding: 12px; margin: 16px 0; text-align: center;'>
-            <p style='margin: 0; font-weight: 700;'>{status_text}</p>
+        <div style='background: rgba(59, 130, 246, 0.25); border-radius: 12px; padding: 18px; margin: 25px 0; text-align: center;'>
+            <p style='color: #ffffff; margin: 0; font-weight: 600; font-size: 1.1rem;'>{status_text}</p>
         </div>
         """, unsafe_allow_html=True)
         
-        # Sélection du secteur
-        st.markdown("<p style='font-weight: 800; margin-bottom: 10px;'>🎯 Target Sector:</p>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: #ffffff; text-align: center; margin-bottom: 15px;'>🎯 Secteur Cible</h4>", unsafe_allow_html=True)
         sectors = agent.get_translation("sectors")
         sector_options = list(sectors.keys())
-        sector_labels = list(sectors.values())
         
         selected_sector = st.selectbox(
-            "Select sector",
+            "Sélectionnez un secteur",
             sector_options,
             format_func=lambda x: sectors[x],
             label_visibility="collapsed"
         )
         
-        # Bouton d'activation
-        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         
         if agent.status in ["idle", "completed"]:
-            if st.button("🚀 Activate ARIA Agent", key="activate_btn", type="primary"):
-                with st.spinner("Agent activation in progress..."):
-                    # Exécution de l'analyse asynchrone
-                    import asyncio
+            if st.button("🚀 Activer l'Agent ARIA", key="activate_btn", type="primary", use_container_width=True):
+                with st.spinner("Activation de l'agent en cours..."):
                     try:
                         loop = asyncio.get_event_loop()
                     except RuntimeError:
@@ -496,245 +521,235 @@ def main():
                     loop.run_until_complete(agent.activate(selected_sector))
                     st.rerun()
         else:
-            if st.button("⏹️ Stop Agent", key="stop_btn"):
+            if st.button("⏹️ Arrêter l'Agent", key="stop_btn", use_container_width=True):
                 agent.status = "idle"
                 agent.thoughts = []
                 agent.current_analysis = None
                 st.rerun()
         
-        # Métriques temps réel
         if agent.status != "idle":
-            st.markdown("<h4 class='section-accent' style='margin-top: 6px;'>📊 Real-time Metrics</h4>", unsafe_allow_html=True)
+            st.markdown("<br><h4 style='color: #ffffff; text-align: center;'>📊 Métriques en Temps Réel</h4>", unsafe_allow_html=True)
             
             metrics_data = {
-                "Neural Activity": f"{agent.neural_activity}",
-                "Data Sources": "847", 
-                "Insights Generated": f"{len([t for t in agent.thoughts if t.confidence > 0.8])}",
-                "Confidence": f"{agent.confidence_level:.1f}%" if agent.confidence_level > 0 else "N/A"
+                "Activité Neuronale": f"{agent.neural_activity}",
+                "Sources de Données": "847", 
+                "Insights Générés": f"{len([t for t in agent.thoughts if t.confidence > 0.8])}",
+                "Niveau de Confiance": f"{agent.confidence_level:.1f}%" if agent.confidence_level > 0 else "N/A"
             }
             
             for metric, value in metrics_data.items():
                 st.markdown(f"""
                 <div class='metric-card'>
-                    <p style='color: #e5e7eb; margin: 0; font-size: 0.8rem;'>{metric}</p>
-                    <p style='margin: 0; font-size: 1.2rem; font-weight: 800;'>{value}</p>
+                    <p style='color: #bfdbfe; margin: 0; font-size: 0.9rem;'>{metric}</p>
+                    <p style='color: #ffffff; margin: 0; font-size: 1.4rem; font-weight: bold;'>{value}</p>
                 </div>
                 """, unsafe_allow_html=True)
         
         st.markdown("</div>", unsafe_allow_html=True)
     
     with col2:
-        # Zone d'affichage des pensées et résultats
         if agent.status != "idle" and agent.thoughts:
             st.markdown("""
             <div class='analysis-card'>
-                <h3 class='section-accent' style='margin-bottom: 14px;'>🧠 Agent Thought Process</h3>
+                <h3 style='color: #ffffff; text-align: center; margin-bottom: 25px;'>🧠 Processus de Pensée</h3>
             </div>
             """, unsafe_allow_html=True)
             
-            # Affichage des pensées en temps réel
             for i, thought in enumerate(agent.thoughts):
                 st.markdown(f"""
                 <div class='thought-bubble'>
-                    <div style='display: flex; align-items: center; gap: 12px;'>
-                        <span style='background: linear-gradient(45deg, #1d4ed8, #2563eb); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;'>
-                            ✨
+                    <div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                        <span style='background: linear-gradient(45deg, #3b82f6, #60a5fa); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 15px;'>
+                            <span style='font-size: 1.2rem;'>🤖</span>
                         </span>
                         <div>
-                            <p style='margin: 0; font-size: 0.98rem; font-weight:700;'>{thought.content}</p>
-                            <p style='color: #e5e7eb; margin: 2px 0 0 0; font-size: 0.8rem;'>{thought.timestamp.strftime("%H:%M:%S")}</p>
+                            <p style='color: #ffffff; margin: 0; font-size: 1.1rem; font-weight: 500;'>{thought.content}</p>
+                            <p style='color: #bfdbfe; margin: 0; font-size: 0.8rem;'>{thought.timestamp.strftime("%H:%M:%S")}</p>
                         </div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
         
-        # Résultats d'analyse
         if agent.current_analysis and agent.status == "completed":
-            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
             
-            # Synthèse exécutive
             st.markdown(f"""
             <div class='analysis-card'>
-                <h3 class='section-accent' style='margin-bottom: 12px;'>📋 Executive Summary</h3>
-                <div style='background: rgba(29, 78, 216, 0.14); border-left: 5px solid #1d4ed8; padding: 16px; border-radius: 10px;'>
-                    <p style='color: #ffffff; margin: 0; line-height: 1.6;'>{agent.current_analysis.get("summary", "")}</p>
+                <h3 style='color: #ffffff; text-align: center; margin-bottom: 25px;'>📋 Résumé Exécutif</h3>
+                <div style='background: linear-gradient(45deg, rgba(59, 130, 246, 0.25), rgba(96, 165, 250, 0.25)); border-left: 5px solid #3b82f6; padding: 25px; border-radius: 0 15px 15px 0;'>
+                    <p style='color: #f0f9ff; margin: 0; line-height: 1.7; font-size: 1.1rem;'>{agent.current_analysis.get("summary", "")}</p>
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
-            # Graphique de confiance (JAUGE CONSERVÉE)
             if agent.confidence_level > 0:
                 st.markdown("""
                 <div class='analysis-card'>
-                    <h3 class='section-accent' style='margin-bottom: 12px;'>📊 Confidence Analysis</h3>
+                    <h3 style='color: #ffffff; text-align: center; margin-bottom: 25px;'>📊 Analyse de Confiance</h3>
                 </div>
                 """, unsafe_allow_html=True)
                 
+                # Conteneur pour la jauge
+                st.markdown("<div class='confidence-gauge'>", unsafe_allow_html=True)
                 confidence_fig = agent.generate_confidence_gauge()
                 st.plotly_chart(confidence_fig, use_container_width=True)
+                st.markdown("</div>", unsafe_allow_html=True)
             
-            # Insights détectés
             insights = agent.current_analysis.get("insights", [])
             if insights:
                 st.markdown("""
                 <div class='analysis-card'>
-                    <h3 class='section-accent' style='margin-bottom: 12px;'>🎯 Detected Insights</h3>
+                    <h3 style='color: #ffffff; text-align: center; margin-bottom: 25px;'>🎯 Insights Détectés</h3>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Séparation par catégorie
                 opportunities = [i for i in insights if i.category == "opportunity"]
                 threats = [i for i in insights if i.category == "threat"]
                 trends = [i for i in insights if i.category == "trend"]
                 
                 if opportunities:
-                    st.markdown("<h4 style='font-weight:800;'>💡 Opportunities</h4>", unsafe_allow_html=True)
+                    st.markdown("<h4 style='color: #10b981; text-align: center;'>💡 Opportunités</h4>", unsafe_allow_html=True)
                     for opp in opportunities:
                         st.markdown(f"""
-                        <div style='background: rgba(16, 185, 129, 0.12); border-left: 5px solid #10b981; padding: 14px; margin: 10px 0; border-radius: 10px;'>
-                            <h5 style='margin: 0 0 6px 0; font-weight:800;'>{opp.title}</h5>
-                            <p style='color: #e5e7eb; margin: 0 0 8px 0; font-size: 0.95rem;'>{opp.description}</p>
-                            <div style='display: flex; gap: 16px; font-size: 0.85rem;'>
-                                <span>Impact: <b>{opp.impact_score}/10</b></span>
-                                <span>Confidence: <b>{opp.confidence}%</b></span>
+                        <div style='background: rgba(16, 185, 129, 0.2); border-left: 5px solid #10b981; padding: 20px; margin: 15px 0; border-radius: 0 15px 15px 0;'>
+                            <h5 style='color: #ffffff; margin: 0 0 10px 0; font-size: 1.2rem;'>{opp.title}</h5>
+                            <p style='color: #d1fae5; margin: 0 0 10px 0; font-size: 1rem;'>{opp.description}</p>
+                            <div style='display: flex; justify-content: space-between; align-items: center;'>
+                                <span style='color: #a7f3d0; font-size: 0.9rem;'>Impact: {opp.impact_score}/10</span>
+                                <span style='color: #10b981; font-size: 0.9rem;'>Confiance: {opp.confidence}%</span>
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
                 
                 if threats:
-                    st.markdown("<h4 style='font-weight:800;'>⚠️ Threats</h4>", unsafe_allow_html=True)
+                    st.markdown("<h4 style='color: #ef4444; text-align: center;'>⚠️ Menaces</h4>", unsafe_allow_html=True)
                     for threat in threats:
                         st.markdown(f"""
-                        <div style='background: rgba(239, 68, 68, 0.12); border-left: 5px solid #ef4444; padding: 14px; margin: 10px 0; border-radius: 10px;'>
-                            <h5 style='margin: 0 0 6px 0; font-weight:800;'>{threat.title}</h5>
-                            <p style='color: #e5e7eb; margin: 0 0 8px 0; font-size: 0.95rem;'>{threat.description}</p>
-                            <div style='display: flex; gap: 16px; font-size: 0.85rem;'>
-                                <span>Impact: <b>{threat.impact_score}/10</b></span>
-                                <span>Confidence: <b>{threat.confidence}%</b></span>
+                        <div style='background: rgba(239, 68, 68, 0.2); border-left: 5px solid #ef4444; padding: 20px; margin: 15px 0; border-radius: 0 15px 15px 0;'>
+                            <h5 style='color: #ffffff; margin: 0 0 10px 0; font-size: 1.2rem;'>{threat.title}</h5>
+                            <p style='color: #fee2e2; margin: 0 0 10px 0; font-size: 1rem;'>{threat.description}</p>
+                            <div style='display: flex; justify-content: space-between; align-items: center;'>
+                                <span style='color: #fecaca; font-size: 0.9rem;'>Impact: {threat.impact_score}/10</span>
+                                <span style='color: #ef4444; font-size: 0.9rem;'>Confiance: {threat.confidence}%</span>
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
                 
                 if trends:
-                    st.markdown("<h4 style='font-weight:800;'>📈 Trends</h4>", unsafe_allow_html=True)
+                    st.markdown("<h4 style='color: #8b5cf6; text-align: center;'>📈 Tendances</h4>", unsafe_allow_html=True)
                     for trend in trends:
                         st.markdown(f"""
-                        <div style='background: rgba(139, 92, 246, 0.12); border-left: 5px solid #8b5cf6; padding: 14px; margin: 10px 0; border-radius: 10px;'>
-                            <h5 style='margin: 0 0 6px 0; font-weight:800;'>{trend.title}</h5>
-                            <p style='color: #e5e7eb; margin: 0 0 8px 0; font-size: 0.95rem;'>{trend.description}</p>
-                            <div style='display: flex; gap: 16px; font-size: 0.85rem;'>
-                                <span>Impact: <b>{trend.impact_score}/10</b></span>
-                                <span>Confidence: <b>{trend.confidence}%</b></span>
+                        <div style='background: rgba(139, 92, 246, 0.2); border-left: 5px solid #8b5cf6; padding: 20px; margin: 15px 0; border-radius: 0 15px 15px 0;'>
+                            <h5 style='color: #ffffff; margin: 0 0 10px 0; font-size: 1.2rem;'>{trend.title}</h5>
+                            <p style='color: #ede9fe; margin: 0 0 10px 0; font-size: 1rem;'>{trend.description}</p>
+                            <div style='display: flex; justify-content: space-between; align-items: center;'>
+                                <span style='color: #ddd6fe; font-size: 0.9rem;'>Impact: {trend.impact_score}/10</span>
+                                <span style='color: #8b5cf6; font-size: 0.9rem;'>Confiance: {trend.confidence}%</span>
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
             
-            # Recommandations IA
             recommendations = agent.current_analysis.get("recommendations", [])
             if recommendations:
                 st.markdown("""
                 <div class='analysis-card'>
-                    <h3 class='section-accent' style='margin-bottom: 12px;'>🎯 AI Recommendations</h3>
+                    <h3 style='color: #ffffff; text-align: center; margin-bottom: 25px;'>🎯 Recommandations IA</h3>
                 </div>
                 """, unsafe_allow_html=True)
                 
                 for i, rec in enumerate(recommendations, 1):
                     st.markdown(f"""
-                    <div style='display: flex; align-items: start; background: rgba(29, 78, 216, 0.12); border: 1px solid rgba(255,255,255,.15); border-radius: 10px; padding: 14px; margin: 10px 0;'>
-                        <div style='background: linear-gradient(45deg, #1d4ed8, #2563eb); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0; color:#fff; font-weight:800;'>
-                            {i}
+                    <div style='display: flex; align-items: start; background: rgba(139, 92, 246, 0.2); border-radius: 15px; padding: 20px; margin: 15px 0;'>
+                        <div style='background: linear-gradient(45deg, #8b5cf6, #a855f7); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin-right: 20px; flex-shrink: 0;'>
+                            <span style='color: white; font-weight: bold; font-size: 1.1rem;'>{i}</span>
                         </div>
-                        <p style='margin: 0; line-height: 1.55;'>{rec}</p>
+                        <p style='color: #f0f9ff; margin: 0; line-height: 1.6; font-size: 1.1rem;'>{rec}</p>
                     </div>
                     """, unsafe_allow_html=True)
             
-            # Actions et export
             st.markdown("""
             <div class='analysis-card'>
-                <h3 class='section-accent' style='margin-bottom: 12px;'>📤 Export & Actions</h3>
+                <h3 style='color: #ffffff; text-align: center; margin-bottom: 25px;'>📤 Export & Actions</h3>
             </div>
             """, unsafe_allow_html=True)
             
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                if st.button("📄 Export Report", key="export_btn"):
-                    # Génération d'un rapport texte simple (inchangé)
+                if st.button("📄 Exporter Rapport", key="export_btn", use_container_width=True):
                     report_content = f"""
-                    🤖 ARIA - STRATEGIC INTELLIGENCE REPORT
-                    Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-                    Sector: {selected_sector}
-                    Confidence Level: {agent.confidence_level:.1f}%
+                    🤖 ARIA - RAPPORT STRATÉGIQUE
+                    Généré le: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+                    Secteur: {selected_sector}
+                    Niveau de Confiance: {agent.confidence_level:.1f}%
                     
-                    EXECUTIVE SUMMARY:
+                    RÉSUMÉ EXÉCUTIF:
                     {agent.current_analysis.get('summary', '')}
                     
-                    KEY INSIGHTS:
+                    INSIGHTS CLÉS:
                     """
                     
                     for insight in insights:
-                        report_content += f"\\n• {insight.title} (Impact: {insight.impact_score}/10, Confidence: {insight.confidence}%)"
-                        report_content += f"\\n  {insight.description}\\n"
+                        report_content += f"\n• {insight.title} (Impact: {insight.impact_score}/10, Confiance: {insight.confidence}%)"
+                        report_content += f"\n  {insight.description}\n"
                     
-                    report_content += "\\nRECOMMENDATIONS:\\n"
+                    report_content += "\nRECOMMANDATIONS:\n"
                     for i, rec in enumerate(recommendations, 1):
-                        report_content += f"{i}. {rec}\\n"
+                        report_content += f"{i}. {rec}\n"
                     
                     st.download_button(
-                        label="⬇️ Download Report",
+                        label="⬇️ Télécharger le Rapport",
                         data=report_content.encode('utf-8'),
-                        file_name=f"aria_report_{selected_sector}_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
-                        mime="text/plain"
+                        file_name=f"aria_rapport_{selected_sector}_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                        mime="text/plain",
+                        use_container_width=True
                     )
             
             with col2:
-                if st.button("🔔 Setup Alerts", key="alerts_btn"):
-                    st.success("✅ Alert system configured! You'll receive notifications for market changes.")
+                if st.button("🔔 Configurer Alertes", key="alerts_btn", use_container_width=True):
+                    st.success("✅ Système d'alertes configuré! Vous recevrez des notifications pour les changements de marché.")
             
             with col3:
-                if st.button("🔄 Re-analyze", key="reanalyze_btn"):
+                if st.button("🔄 Ré-analyser", key="reanalyze_btn", use_container_width=True):
                     agent.status = "idle"
                     agent.thoughts = []
                     agent.current_analysis = None
                     agent.confidence_level = 0
                     st.rerun()
         
-        # État initial
         elif agent.status == "idle":
             st.markdown("""
-            <div class='analysis-card' style='text-align: center; padding: 44px;'>
-                <div style='font-size: 3.6rem; margin-bottom: 18px;'>🤖</div>
-                <h3 style='margin-bottom: 12px; font-weight:800;'>ARIA Ready for Mission</h3>
-                <p style='color: #e5e7eb; margin-bottom: 24px;'>Select a target sector and activate the agent to begin strategic market analysis.</p>
-                <div style='background: rgba(29,78,216,0.14); border:1px solid rgba(255,255,255,.15); border-radius: 10px; padding: 16px;'>
-                    <h4 style='margin-bottom: 10px; font-weight:800;'>🧠 Agent Capabilities</h4>
-                    <ul style='text-align: left; margin: 0;'>
-                        <li>🔍 Multi-source market intelligence gathering</li>
-                        <li>⚡ Real-time trend analysis and prediction</li>
-                        <li>🎯 Strategic opportunity identification</li>
-                        <li>📊 Risk assessment and mitigation strategies</li>
-                        <li>🤖 AI-powered actionable recommendations</li>
+            <div class='analysis-card' style='text-align: center; padding: 60px;'>
+                <div style='font-size: 5rem; margin-bottom: 25px;'>🤖</div>
+                <h3 style='color: #ffffff; margin-bottom: 20px;'>ARIA Prêt pour la Mission</h3>
+                <p style='color: #bfdbfe; margin-bottom: 40px; font-size: 1.1rem;'>Sélectionnez un secteur cible et activez l'agent pour commencer l'analyse stratégique de marché.</p>
+                <div style='background: rgba(59, 130, 246, 0.2); border-radius: 15px; padding: 25px; margin: 25px 0;'>
+                    <h4 style='color: #93c5fd; margin-bottom: 20px;'>🧠 Capacités de l'Agent</h4>
+                    <ul style='color: #dbeafe; text-align: left; list-style: none; padding: 0; font-size: 1.05rem;'>
+                        <li style='margin: 12px 0;'>🔍 Collecte de renseignements multi-sources</li>
+                        <li style='margin: 12px 0;'>⚡ Analyse et prédiction de tendances en temps réel</li>
+                        <li style='margin: 12px 0;'>🎯 Identification d'opportunités stratégiques</li>
+                        <li style='margin: 12px 0;'>📊 Évaluation des risques et stratégies d'atténuation</li>
+                        <li style='margin: 12px 0;'>🤖 Recommandations actionnables alimentées par l'IA</li>
                     </ul>
                 </div>
             </div>
             """, unsafe_allow_html=True)
     
-    # Neural network visualization (sidebar) — structure inchangée
-    if agent.status in ["thinking", "analyzing"]:
-        with st.sidebar:
-            st.markdown("### 🧠 Neural Network Activity")
-            neural_fig = agent.generate_neural_network_viz()
-            st.plotly_chart(neural_fig, use_container_width=True)
-    
-    # Footer (inchangé)
+    # Footer premium
     st.markdown("""
-    <div style='margin-top: 34px; padding: 24px 0; border-top: 1px solid rgba(255, 255, 255, 0.12); text-align: center;'>
-        <p style='color: #e5e7eb; margin: 0;'>
-            🤖 ARIA - Autonomous Research & Intelligence Agent • Confidence Level: {confidence} • Last Update: {timestamp} • Neural Activity: {activity} nodes
+    <div style='margin-top: 60px; padding: 40px 0; border-top: 1px solid rgba(255, 255, 255, 0.15); text-align: center;'>
+        <p style='color: #93c5fd; margin: 0; font-size: 1.1rem;'>
+            🤖 ARIA - Agent Autonome de Recherche et d'Intelligence | 
+            Propulsé par des Réseaux Neuronaux IA Avancés | 
+            Niveau de Confiance: {confidence}%
+        </p>
+        <p style='color: #bfdbfe; font-size: 1rem; margin: 10px 0 0 0;'>
+            Dernière mise à jour: {timestamp} | Activité Neuronale: {activity} nœuds
         </p>
     </div>
     """.format(
-        confidence=f"{agent.confidence_level:.1f}%" if agent.confidence_level > 0 else "N/A",
+        confidence=f"{agent.confidence_level:.1f}" if agent.confidence_level > 0 else "N/A",
         timestamp=datetime.now().strftime('%H:%M:%S'),
         activity=agent.neural_activity
     ), unsafe_allow_html=True)
