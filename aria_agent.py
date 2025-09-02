@@ -79,7 +79,6 @@ def generate_report_pdf():
     pdf.set_text_color(128, 128, 128)
     pdf.cell(0, 10, f'Rapport genere le {time.strftime("%d/%m/%Y a %H:%M:%S")}', 0, 1, 'C')
     
-    # CORRECTION DE L'ERREUR : pdf.output() retourne directement des bytes.
     return pdf.output()
 
 # --- INJECTION DU CSS PERSONNALISÉ (THÈME HAUT CONTRASTE)---
@@ -94,7 +93,7 @@ CSS_CODE = """
         --text-color-light: #bdc3c7;
         --border-color: rgba(255, 255, 255, 0.2);
         --glow-color: #00BFFF; /* Bleu électrique vif */
-        --glow-color-purple: #9333ea;
+        --glow-color-accent: #FFD700; /* Jaune/Or pour l'accent */
     }
     
     #root > div:nth-child(1) > div > div > div > div > section > div {padding-top: 2rem;}
@@ -110,7 +109,7 @@ CSS_CODE = """
     #bg-canvas {
         position: fixed; top: 0; left: 0;
         width: 100%; height: 100%;
-        z-index: -1; opacity: 0.2; /* Particules plus subtiles */
+        z-index: -1; opacity: 0.3; /* Particules plus présentes */
     }
 
     .font-orbitron { font-family: 'Orbitron', sans-serif; }
@@ -133,9 +132,9 @@ CSS_CODE = """
     .agent-avatar {
         width: 160px; height: 160px; border-radius: 50%;
         position: relative;
-        overflow: hidden; /* Important pour contenir la scanline */
+        overflow: hidden;
         background: radial-gradient(circle at center, rgba(10, 10, 30, 1) 30%, transparent 70%),
-                    conic-gradient(from 180deg at 50% 50%, var(--glow-color-purple) 0%, var(--glow-color) 50%, var(--glow-color-purple) 100%);
+                    conic-gradient(from 180deg at 50% 50%, var(--glow-color-accent) 0%, var(--glow-color) 50%, var(--glow-color-accent) 100%);
         box-shadow: 0 0 15px -5px var(--glow-color), 0 0 30px -5px var(--glow-color), 
                     inset 0 0 10px rgba(0, 191, 255, 0.5);
         animation: spin 10s linear infinite;
@@ -159,7 +158,6 @@ CSS_CODE = """
         animation: pulse-ring 3s infinite alternate;
     }
     
-    /* NOUVEAU: Effet de scan lumineux sur l'avatar */
     .scanline {
         position: absolute;
         width: 100%;
@@ -178,7 +176,6 @@ CSS_CODE = """
         100% { top: -10%; }
     }
     
-    /* AMÉLIORÉ: Effet néon plus intense */
     .neon-border {
         border: 1px solid var(--glow-color);
         box-shadow: 0 0 5px var(--glow-color), inset 0 0 5px var(--glow-color);
@@ -221,7 +218,14 @@ components.html("""
                 if (p.y > canvas.height || p.y < 0) p.dY = -p.dY;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0, 191, 255, 0.8)' : 'rgba(147, 51, 234, 0.7)';
+                const rand = Math.random();
+                if (rand > 0.66) {
+                    ctx.fillStyle = 'rgba(0, 191, 255, 0.8)'; // Blue
+                } else if (rand > 0.33) {
+                    ctx.fillStyle = 'rgba(255, 215, 0, 0.8)'; // Yellow/Gold
+                } else {
+                    ctx.fillStyle = 'rgba(230, 230, 250, 0.7)'; // White
+                }
                 ctx.fill();
             }
             requestAnimationFrame(animateParticles);
@@ -269,7 +273,7 @@ with col1:
 
         st.markdown('<div style="margin-top: 1.5rem;"></div>', unsafe_allow_html=True)
         
-        st.markdown("""<h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color); border-bottom: 2px solid var(--glow-color-purple); padding-bottom: 0.5rem; margin-bottom: 1rem;">🛠️ Stack Technique</h2>""", unsafe_allow_html=True)
+        st.markdown("""<h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color); border-bottom: 2px solid var(--glow-color-accent); padding-bottom: 0.5rem; margin-bottom: 1rem;">🛠️ Stack Technique</h2>""", unsafe_allow_html=True)
         st.markdown("""
         <ul style="list-style: none; padding: 0; font-size: 0.9rem;">
             <li><b>Frontend:</b> Streamlit + CSS/JS</li>
@@ -296,10 +300,10 @@ with col2:
                 <canvas id="neural-chart" height="30" class="w-full mt-2"></canvas>
             </div>
             <div class="glass-card" style="padding: 0.75rem">
-                <div class="font-orbitron" id="confidence-score" style="font-size: 1.875rem; color: var(--glow-color-purple); font-weight: bold;">92.7%</div>
+                <div class="font-orbitron" id="confidence-score" style="font-size: 1.875rem; color: var(--glow-color-accent); font-weight: bold;">92.7%</div>
                 <div style="font-size: 0.7rem; color: var(--text-color-light); text-transform: uppercase;">Score de Confiance</div>
                 <div style="width: 100%; background: #374151; border-radius: 999px; height: 6px; margin-top: 10px;">
-                    <div id="confidence-bar" style="background: var(--glow-color-purple); height: 6px; border-radius: 999px; width: 92.7%; transition: width 0.5s ease;"></div>
+                    <div id="confidence-bar" style="background: var(--glow-color-accent); height: 6px; border-radius: 999px; width: 92.7%; transition: width 0.5s ease;"></div>
                 </div>
             </div>
         </div>
@@ -323,7 +327,7 @@ with col3:
                 <p style="font-size: 0.8rem; color: var(--text-color); margin: 0;">Intensification de la régulation RGPD.</p>
             </div>
         </div>
-        <h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color); border-bottom: 2px solid var(--glow-color-purple); padding-bottom: 0.5rem; margin-top: 1.5rem; margin-bottom: 1rem;">🤖 Chat avec l'Agent</h2>
+        <h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color); border-bottom: 2px solid var(--glow-color-accent); padding-bottom: 0.5rem; margin-top: 1.5rem; margin-bottom: 1rem;">🤖 Chat avec l'Agent</h2>
     </div>
     """, unsafe_allow_html=True)
     
@@ -368,7 +372,6 @@ components.html(f"""
         const confidenceEl = document.getElementById('confidence-score');
         const confidenceBar = document.getElementById('confidence-bar');
         const thinkingEl = document.getElementById('thinking-process');
-        const statusEl = document.querySelector('span[style*="color: #c084fc"]'); // Ciblage plus robuste
         const chartCanvas = document.getElementById('neural-chart');
         
         if (!neuralEl || !confidenceEl || !confidenceBar || !thinkingEl || !chartCanvas) return;
@@ -403,10 +406,12 @@ components.html(f"""
 
             if (thoughtIndex >= thoughts.length) {{
                  thoughtIndex = 0;
-                 thinkingEl.innerHTML = '';
+                 // CORRECTION ERREUR JAVASCRIPT: Remplacer innerHTML = ''
+                 while (thinkingEl.firstChild) {{
+                     thinkingEl.removeChild(thinkingEl.firstChild);
+                 }}
             }}
             const thought = thoughts[thoughtIndex];
-            if (statusEl) statusEl.textContent = thought.state;
             
             const p = document.createElement('p');
             p.style.margin = '0 0 0.5rem 0';
@@ -422,7 +427,21 @@ components.html(f"""
         drawNeuralChart();
     }}
     
-    window.addEventListener('load', runSimulations);
+    // Utiliser un observateur pour relancer la simulation si le DOM est modifié par Streamlit
+    const observer = new MutationObserver((mutations) => {{
+        for (const mutation of mutations) {{
+            if (mutation.addedNodes.length > 0) {{
+                const target = document.getElementById('neural-activity');
+                if(target) {{
+                    runSimulations();
+                    observer.disconnect(); // Exécuter une seule fois
+                    break;
+                }}
+            }}
+        }}
+    }});
+
+    observer.observe(document.body, {{ childList: true, subtree: true }});
 </script>
 """, height=0)
 
