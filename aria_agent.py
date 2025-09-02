@@ -87,14 +87,46 @@ class ARIAAgent:
                         MarketInsight("Regulatory Tightening", "New regulations create entry barriers but favor compliant players.", 7.8, 91, "threat")
                     ]
                 }
+            },
+            "SaaS": {
+                "fr": {
+                    "summary": "Le marché du SaaS B2B est en pleine expansion, tiré par la transformation numérique des entreprises. La cybersécurité et les outils collaboratifs sont les segments les plus porteurs.",
+                    "insights": [
+                        MarketInsight("Plateformes Low-Code/No-Code", "La demande pour des solutions de développement rapide explose, créant une opportunité pour les plateformes intuitives.", 8.8, 85, "opportunity"),
+                        MarketInsight("Saturation du Marché CRM", "Le marché des CRM est de plus en plus saturé, rendant la différenciation difficile et augmentant les coûts d'acquisition client.", 7.5, 90, "threat")
+                    ]
+                },
+                "en": {
+                     "summary": "The B2B SaaS market is booming, driven by corporate digital transformation. Cybersecurity and collaborative tools are the most promising segments.",
+                    "insights": [
+                        MarketInsight("Low-Code/No-Code Platforms", "The demand for rapid development solutions is exploding, creating an opportunity for intuitive platforms.", 8.8, 85, "opportunity"),
+                        MarketInsight("CRM Market Saturation", "The CRM market is increasingly saturated, making differentiation difficult and increasing customer acquisition costs.", 7.5, 90, "threat")
+                    ]
+                }
+            },
+            "E-commerce": {
+                "fr": {
+                    "summary": "L'E-commerce post-pandémie se concentre sur l'expérience client et la logistique durable. Le 'Social Commerce' et le 'Live Shopping' deviennent des canaux de vente incontournables.",
+                     "insights": [
+                        MarketInsight("Logistique Verte", "Les consommateurs sont prêts à payer plus pour des options de livraison durables, ouvrant un marché pour la logistique éco-responsable.", 8.5, 82, "opportunity"),
+                        MarketInsight("Complexité de la Supply Chain", "Les tensions géopolitiques et les coûts de transport augmentent la volatilité des chaînes d'approvisionnement.", 8.2, 93, "threat")
+                    ]
+                },
+                "en": {
+                    "summary": "Post-pandemic E-commerce is focusing on customer experience and sustainable logistics. 'Social Commerce' and 'Live Shopping' are becoming essential sales channels.",
+                    "insights": [
+                        MarketInsight("Green Logistics", "Consumers are willing to pay more for sustainable delivery options, opening a market for eco-friendly logistics.", 8.5, 82, "opportunity"),
+                        MarketInsight("Supply Chain Complexity", "Geopolitical tensions and rising transportation costs are increasing supply chain volatility.", 8.2, 93, "threat")
+                    ]
+                }
             }
         }
 
-    def get_translation(self, key: str, subkey: str = None):
+    def get_translation(self, key: str):
+        # Correction d'erreur: Assure que la langue existe, sinon utilise 'fr' par défaut.
         lang_data = self.translations.get(self.language, self.translations["fr"])
-        if subkey:
-            return lang_data.get(key, {}).get(subkey, subkey)
-        return lang_data.get(key, key)
+        # Correction d'erreur: Retourne un dictionnaire vide si la clé n'est pas trouvée, pour éviter les crashs.
+        return lang_data.get(key, {})
 
     async def activate(self, sector: str):
         self.status = "thinking"
@@ -159,7 +191,7 @@ def generate_report_pdf(agent):
     return bytes(pdf.output())
 
 # --- INJECTION DU CSS & JS (AMÉLIORÉ POUR LA CLARTÉ) ---
-CSS_CODE = """<style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Orbitron:wght@500;700&display=swap');:root{--bg-color:#050816;--card-bg-color:rgba(12,18,44,0.9);--text-color:#FFFFFF;--text-color-light:#c7d2fe;--border-color:rgba(255,255,255,0.15);--glow-color:#00BFFF;--glow-color-accent:#FFD700;}#root>div:nth-child(1)>div>div>div>div>section>div{padding-top:2rem;}header,footer{visibility:hidden;}body{font-family:'Inter',sans-serif;background-color:var(--bg-color);color:var(--text-color);overflow:hidden;}#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;opacity:0.5;}.font-orbitron{font-family:'Orbitron',sans-serif;}.glass-card{background:var(--card-bg-color);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);border:1px solid var(--border-color);transition:all 0.3s ease;padding:1.5rem;border-radius:1rem;height:100%;box-shadow:0 8px 32px 0 rgba(0,0,0,0.5);}.glass-card h2{font-weight:700;text-shadow:0 0 8px rgba(0,191,255,0.5);}.glass-card:hover{border-color:var(--glow-color);box-shadow:0 0 25px rgba(0,191,255,0.3);}.agent-avatar{width:160px;height:160px;border-radius:50%;position:relative;overflow:hidden;background:radial-gradient(circle at center,rgba(10,10,30,1) 30%,transparent 70%),conic-gradient(from 180deg at 50% 50%,var(--glow-color-accent) 0%,var(--glow-color) 50%,var(--glow-color-accent) 100%);box-shadow:0 0 15px -5px var(--glow-color),0 0 30px -5px var(--glow-color),inset 0 0 10px rgba(0,191,255,0.5);animation:spin 10s linear infinite;margin:1rem auto;}.agent-avatar::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:70%;height:70%;background:var(--bg-color);border-radius:50%;box-shadow:inset 0 0 20px #000;z-index:1;}.agent-avatar::after{content:'';position:absolute;top:-5px;left:-5px;right:-5px;bottom:-5px;border-radius:50%;border:2px solid var(--glow-color);opacity:0.5;animation:pulse-ring 3s infinite alternate;}.scanline{position:absolute;width:100%;height:4px;background:var(--glow-color);box-shadow:0 0 20px 5px var(--glow-color);animation:scan 4s ease-in-out infinite;z-index:2;}@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}@keyframes pulse-ring{from{transform:scale(1);opacity:0.5;}to{transform:scale(1.1);opacity:0.2;}}@keyframes scan{0%{top:-10%;}50%{top:110%;}100%{top:-10%;}}.neon-border{border:1px solid var(--glow-color);box-shadow:0 0 5px var(--glow-color),inset 0 0 5px var(--glow-color);animation:pulse-border 3s infinite alternate;}@keyframes pulse-border{from{box-shadow:0 0 8px -2px var(--glow-color),inset 0 0 8px -2px var(--glow-color);}to{box-shadow:0 0 25px 3px var(--glow-color),inset 0 0 15px 3px var(--glow-color);}}.thought-bubble{background:rgba(12,18,44,0.9);border-left:3px solid var(--glow-color);padding:0.5rem 1rem;margin-bottom:0.5rem;border-radius:0.5rem;font-size:0.85rem;animation:fadeIn 0.5s ease-out;}@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}</style>"""
+CSS_CODE = """<style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Orbitron:wght@500;700;900&display=swap');:root{--bg-color:#050816;--card-bg-color:rgba(12,18,44,0.9);--text-color:#FFFFFF;--text-color-light:#c7d2fe;--border-color:rgba(255,255,255,0.15);--glow-color:#00BFFF;--glow-color-accent:#FFD700;}#root>div:nth-child(1)>div>div>div>div>section>div{padding-top:2rem;}header,footer{visibility:hidden;}body{font-family:'Inter',sans-serif;background-color:var(--bg-color);color:var(--text-color);overflow:hidden;}#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;opacity:0.5;}.font-orbitron{font-family:'Orbitron',sans-serif;}.glass-card{background:var(--card-bg-color);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);border:1px solid var(--border-color);transition:all 0.3s ease;padding:1.5rem;border-radius:1rem;height:100%;box-shadow:0 8px 32px 0 rgba(0,0,0,0.5);}.glass-card h2{font-weight:700;}.glass-card:hover{border-color:var(--glow-color);box-shadow:0 0 25px rgba(0,191,255,0.3);}.agent-avatar{width:160px;height:160px;border-radius:50%;position:relative;overflow:hidden;background:radial-gradient(circle at center,rgba(10,10,30,1) 30%,transparent 70%),conic-gradient(from 180deg at 50% 50%,var(--glow-color-accent) 0%,var(--glow-color) 50%,var(--glow-color-accent) 100%);box-shadow:0 0 15px -5px var(--glow-color),0 0 30px -5px var(--glow-color),inset 0 0 10px rgba(0,191,255,0.5);animation:spin 10s linear infinite;margin:1rem auto;}.agent-avatar::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:70%;height:70%;background:var(--bg-color);border-radius:50%;box-shadow:inset 0 0 20px #000;z-index:1;}.agent-avatar::after{content:'';position:absolute;top:-5px;left:-5px;right:-5px;bottom:-5px;border-radius:50%;border:2px solid var(--glow-color);opacity:0.5;animation:pulse-ring 3s infinite alternate;}.scanline{position:absolute;width:100%;height:4px;background:var(--glow-color);box-shadow:0 0 20px 5px var(--glow-color);animation:scan 4s ease-in-out infinite;z-index:2;}@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}@keyframes pulse-ring{from{transform:scale(1);opacity:0.5;}to{transform:scale(1.1);opacity:0.2;}}@keyframes scan{0%{top:-10%;}50%{top:110%;}100%{top:-10%;}}.neon-border{border:1px solid var(--glow-color);box-shadow:0 0 5px var(--glow-color),inset 0 0 5px var(--glow-color);animation:pulse-border 2.5s infinite alternate;}@keyframes pulse-border{from{box-shadow:0 0 10px -2px var(--glow-color),inset 0 0 10px -2px var(--glow-color);}to{box-shadow:0 0 30px 5px var(--glow-color),inset 0 0 20px 5px var(--glow-color);}}.thought-bubble{background:rgba(12,18,44,0.9);border-left:3px solid var(--glow-color);padding:0.5rem 1rem;margin-bottom:0.5rem;border-radius:0.5rem;font-size:0.85rem;animation:fadeIn 0.5s ease-out;}@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}</style>"""
 st.markdown(CSS_CODE, unsafe_allow_html=True)
 components.html("""<canvas id="bg-canvas"></canvas><script>const canvas=document.getElementById('bg-canvas'),ctx=canvas.getContext('2d');canvas.width=window.innerWidth;canvas.height=window.innerHeight;let particlesArray;function initParticles(){particlesArray=[];let n=canvas.height*canvas.width/9e3;for(let i=0;i<n;i++)particlesArray.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,dX:.4*Math.random()-.2,dY:.4*Math.random()-.2,size:2*Math.random()+1})}function animateParticles(){ctx.clearRect(0,0,canvas.width,canvas.height);for(let p of particlesArray){p.x+=p.dX,p.y+=p.dY,(p.x>canvas.width||p.x<0)&&(p.dX=-p.dX),(p.y>canvas.height||p.y<0)&&(p.dY=-p.dY),ctx.beginPath(),ctx.arc(p.x,p.y,p.size,0,2*Math.PI);const rand=Math.random();ctx.fillStyle=rand>.66?"rgba(0, 191, 255, 0.8)":rand>.33?"rgba(255, 215, 0, 0.8)":"rgba(230, 230, 250, 0.7)",ctx.fill()}requestAnimationFrame(animateParticles)}window.addEventListener('resize',()=>{canvas.width=window.innerWidth,canvas.height=window.innerHeight,initParticles()}),initParticles(),animateParticles();</script>""", height=0, width=0)
 
@@ -169,7 +201,7 @@ if 'agent' not in st.session_state:
 agent = st.session_state.agent
 
 # Header
-st.markdown("""<div class="glass-card" style="margin-bottom: 1rem;"><h1 class="font-orbitron" style="font-size: 2.5rem; font-weight: 700; color: var(--text-color); letter-spacing: 0.1em; margin: 0; text-shadow: 0 0 15px var(--glow-color);">PROJET <span style="color: var(--glow-color);">ARIA</span></h1><p style="color: var(--text-color-light); margin: 0;">Autonomous Research & Intelligence Agent 🤖</p></div>""", unsafe_allow_html=True)
+st.markdown("""<div class="glass-card" style="margin-bottom: 1rem;"><h1 class="font-orbitron" style="font-size: 2.5rem; font-weight: 900; color: var(--text-color); letter-spacing: 0.1em; margin: 0; text-shadow: 0 0 10px var(--glow-color), 1px 1px 2px rgba(0,0,0,0.5);">PROJET <span style="color: var(--glow-color);">ARIA</span></h1><p style="color: var(--text-color-light); margin: 0;">Autonomous Research & Intelligence Agent 🤖</p></div>""", unsafe_allow_html=True)
 
 # Main Dashboard
 col1, col2, col3 = st.columns([1, 1.2, 1])
@@ -179,10 +211,8 @@ with col1:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown("""<h2 class="font-orbitron" style="font-size: 1.25rem; color: var(--text-color); border-bottom: 2px solid var(--glow-color); padding-bottom: 0.5rem; margin-bottom: 1rem;">🎛️ Panneau de Contrôle</h2>""", unsafe_allow_html=True)
     
-    # Correction de l'erreur: Logique de sélection de langue robuste
     lang_map = {"🇫🇷 Français": "fr", "🇺🇸 English": "en"}
     lang_options = list(lang_map.keys())
-    # Déterminer l'index actuel pour que le widget ne se réinitialise pas
     try:
         current_lang_index = lang_options.index([k for k, v in lang_map.items() if v == agent.language][0])
     except IndexError:
@@ -191,19 +221,16 @@ with col1:
     lang_selection = st.selectbox("Langue / Language", options=lang_options, index=current_lang_index)
     selected_lang_code = lang_map[lang_selection]
     
-    # Mettre à jour la langue de l'agent si elle a changé
     if agent.language != selected_lang_code:
         agent.language = selected_lang_code
         st.rerun()
 
     sectors = agent.get_translation("sectors")
-    sector_selection = st.selectbox("Secteur Cible", options=list(sectors.keys()), format_func=lambda x: sectors[x])
+    sector_selection = st.selectbox("Secteur Cible", options=list(sectors.keys()), format_func=lambda x: sectors.get(x, x))
 
     if agent.status in ["idle", "completed"]:
         if st.button("🚀 Activer ARIA", use_container_width=True, type="primary"):
-            # Lancer l'activation en asynchrone
             asyncio.run(agent.activate(sector_selection))
-            st.rerun()
     else:
         st.button("⏹️ Analyse en cours...", disabled=True, use_container_width=True)
     
@@ -217,7 +244,6 @@ with col2:
     st.markdown(f'<h2 class="font-orbitron" style="font-size: 1.25rem; color: var(--text-color);">🧠 Agent IA - Statut : {status_map.get(agent.status)}</h2>', unsafe_allow_html=True)
     st.markdown('<div class="agent-avatar"><div class="scanline"></div></div>', unsafe_allow_html=True)
     
-    # Métriques
     m_col1, m_col2 = st.columns(2)
     with m_col1:
         st.markdown(f"""<div class="glass-card" style="padding: 0.75rem"><div class="font-orbitron" style="font-size: 1.875rem; color: var(--glow-color); font-weight: 700;">{agent.neural_activity}</div><div style="font-size: 0.7rem; text-transform: uppercase;">Activité Neuronale</div></div>""", unsafe_allow_html=True)
@@ -244,7 +270,6 @@ with col3:
 
     st.markdown("""<h2 class="font-orbitron" style="font-size: 1.25rem; margin-top: 1.5rem; color: var(--text-color); border-bottom: 2px solid var(--glow-color-accent); padding-bottom: 0.5rem; margin-bottom: 1rem;">🤖 Chat avec l'Agent</h2>""", unsafe_allow_html=True)
     
-    # Chat avec bordure lumineuse
     st.markdown('<div class="glass-card neon-border" style="--glow-color: var(--glow-color-accent);">', unsafe_allow_html=True)
     chat_container = st.container(height=160)
     if "messages" not in st.session_state:
