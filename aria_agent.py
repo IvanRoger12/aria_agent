@@ -18,10 +18,10 @@ st.set_page_config(
 class PDF(FPDF):
     def header(self):
         self.set_font('helvetica', 'B', 20)
-        self.set_text_color(0, 255, 255)
+        self.set_text_color(0, 191, 255) # Bleu clair
         self.cell(0, 10, 'PROJET ARIA', 0, 1, 'L')
         self.set_font('helvetica', '', 12)
-        self.set_text_color(224, 224, 224)
+        self.set_text_color(230, 230, 230)
         self.cell(0, 8, 'Rapport d\'Analyse Stratégique', 0, 1, 'L')
         self.ln(10)
 
@@ -40,7 +40,7 @@ class PDF(FPDF):
 
     def chapter_body(self, body):
         self.set_font('helvetica', '', 12)
-        self.set_text_color(224, 224, 224)
+        self.set_text_color(230, 230, 230)
         self.multi_cell(0, 8, body)
         self.ln()
 
@@ -61,7 +61,7 @@ def generate_report_pdf():
     pdf = PDF('P', 'mm', 'A4')
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
-    pdf.set_fill_color(10, 10, 26) # Fond sombre
+    pdf.set_fill_color(5, 8, 22) # Fond très sombre
     pdf.rect(0, 0, 210, 297, 'F')
 
     # Contenu
@@ -79,29 +79,22 @@ def generate_report_pdf():
     pdf.set_text_color(128, 128, 128)
     pdf.cell(0, 10, f'Rapport genere le {time.strftime("%d/%m/%Y a %H:%M:%S")}', 0, 1, 'C')
     
-    return pdf.output(dest='S').encode('latin-1')
+    # CORRECTION DE L'ERREUR : pdf.output() retourne directement des bytes.
+    return pdf.output()
 
-# --- INJECTION DU CSS PERSONNALISÉ (AVEC THÈME CLAIR/SOMBRE)---
+# --- INJECTION DU CSS PERSONNALISÉ (THÈME HAUT CONTRASTE)---
 CSS_CODE = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&family=Orbitron:wght@400;700&display=swap');
 
     :root {
-        --bg-color: #0a0a1a;
-        --card-bg-color: rgba(15, 23, 42, 0.75);
-        --text-color: #e0e0e0;
-        --text-color-light: #9ca3af;
-        --border-color: rgba(255, 255, 255, 0.1);
-        --glow-color: #00ffff;
+        --bg-color: #050816; /* Fond bleu très sombre, presque noir */
+        --card-bg-color: rgba(20, 25, 50, 0.85); /* Cartes plus opaques pour la lisibilité */
+        --text-color: #FFFFFF; /* Texte blanc pur */
+        --text-color-light: #bdc3c7;
+        --border-color: rgba(255, 255, 255, 0.2);
+        --glow-color: #00BFFF; /* Bleu électrique vif */
         --glow-color-purple: #9333ea;
-    }
-    
-    .light-mode {
-        --bg-color: #f0f2f6;
-        --card-bg-color: rgba(255, 255, 255, 0.7);
-        --text-color: #111827;
-        --text-color-light: #4b5563;
-        --border-color: rgba(0, 0, 0, 0.1);
     }
     
     #root > div:nth-child(1) > div > div > div > div > section > div {padding-top: 2rem;}
@@ -112,22 +105,20 @@ CSS_CODE = """
         background-color: var(--bg-color);
         color: var(--text-color);
         overflow: hidden;
-        transition: background-color 0.5s, color 0.5s;
     }
 
     #bg-canvas {
         position: fixed; top: 0; left: 0;
         width: 100%; height: 100%;
-        z-index: -1; opacity: 0.3;
+        z-index: -1; opacity: 0.2; /* Particules plus subtiles */
     }
-    .light-mode #bg-canvas { opacity: 0.15; }
 
     .font-orbitron { font-family: 'Orbitron', sans-serif; }
 
     .glass-card {
         background: var(--card-bg-color);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
+        backdrop-filter: blur(8px); /* Flou réduit pour plus de clarté */
+        -webkit-backdrop-filter: blur(8px);
         border: 1px solid var(--border-color);
         transition: all 0.3s ease;
         padding: 1.5rem; border-radius: 1rem;
@@ -135,55 +126,67 @@ CSS_CODE = """
     }
     
     .glass-card:hover {
-        border-color: rgba(0, 255, 255, 0.5);
-        box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+        border-color: var(--glow-color);
+        box-shadow: 0 0 20px rgba(0, 191, 255, 0.2);
     }
     
     .agent-avatar {
         width: 160px; height: 160px; border-radius: 50%;
         position: relative;
+        overflow: hidden; /* Important pour contenir la scanline */
         background: radial-gradient(circle at center, rgba(10, 10, 30, 1) 30%, transparent 70%),
                     conic-gradient(from 180deg at 50% 50%, var(--glow-color-purple) 0%, var(--glow-color) 50%, var(--glow-color-purple) 100%);
         box-shadow: 0 0 15px -5px var(--glow-color), 0 0 30px -5px var(--glow-color), 
-                    inset 0 0 10px rgba(0, 255, 255, 0.5);
+                    inset 0 0 10px rgba(0, 191, 255, 0.5);
         animation: spin 10s linear infinite;
         margin: 1rem auto;
     }
     .agent-avatar::before {
+        content: ''; position: absolute;
         top: 50%; left: 50%;
         transform: translate(-50%, -50%);
         width: 70%; height: 70%;
         background: var(--bg-color); border-radius: 50%;
         box-shadow: inset 0 0 20px #000;
-        z-index: 1; transition: background-color 0.5s;
+        z-index: 1;
     }
     .agent-avatar::after {
+        content: ''; position: absolute;
         top: -5px; left: -5px; right: -5px; bottom: -5px;
         border-radius: 50%;
         border: 2px solid var(--glow-color);
         opacity: 0.5;
         animation: pulse-ring 3s infinite alternate;
     }
+    
+    /* NOUVEAU: Effet de scan lumineux sur l'avatar */
+    .scanline {
+        position: absolute;
+        width: 100%;
+        height: 4px;
+        background: var(--glow-color);
+        box-shadow: 0 0 20px 5px var(--glow-color);
+        animation: scan 4s ease-in-out infinite;
+        z-index: 2;
+    }
 
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @keyframes pulse-ring { from { transform: scale(1); opacity: 0.5; } to { transform: scale(1.1); opacity: 0.2; } }
+    @keyframes scan {
+        0% { top: -10%; }
+        50% { top: 110%; }
+        100% { top: -10%; }
+    }
     
+    /* AMÉLIORÉ: Effet néon plus intense */
     .neon-border {
         border: 1px solid var(--glow-color);
         box-shadow: 0 0 5px var(--glow-color), inset 0 0 5px var(--glow-color);
-        animation: pulse-border 4s infinite alternate;
-    }
-    .neon-border:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 5px 15px var(--glow-color), inset 0 0 8px var(--glow-color);
+        animation: pulse-border 3s infinite alternate;
     }
     @keyframes pulse-border {
-        from { box-shadow: 0 0 5px -2px var(--glow-color), inset 0 0 5px -2px var(--glow-color); }
-        to { box-shadow: 0 0 10px 2px var(--glow-color), inset 0 0 10px 2px var(--glow-color); }
-    }
-    
-    .st-emotion-cache-1ftvfsb, .st-emotion-cache-1s441v { /* Streamlit chat input color */
-        color: var(--text-color);
+        from { box-shadow: 0 0 8px -2px var(--glow-color), inset 0 0 8px -2px var(--glow-color); }
+        to { box-shadow: 0 0 25px 3px var(--glow-color), inset 0 0 15px 3px var(--glow-color); }
     }
 </style>
 """
@@ -201,12 +204,12 @@ components.html("""
         let particlesArray;
         function initParticles() {
             particlesArray = [];
-            let n = (canvas.height * canvas.width) / 10000;
+            let n = (canvas.height * canvas.width) / 9000;
             for (let i = 0; i < n; i++) {
                 particlesArray.push({
                     x: Math.random() * canvas.width, y: Math.random() * canvas.height,
                     dX: (Math.random() * 0.4) - 0.2, dY: (Math.random() * 0.4) - 0.2,
-                    size: (Math.random() * 1.5) + 1
+                    size: (Math.random() * 2) + 1
                 });
             }
         }
@@ -218,9 +221,7 @@ components.html("""
                 if (p.y > canvas.height || p.y < 0) p.dY = -p.dY;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fillStyle = document.body.classList.contains('light-mode') 
-                    ? 'rgba(0, 0, 0, 0.4)'
-                    : (Math.random() > 0.5 ? 'rgba(0, 255, 255, 0.6)' : 'rgba(147, 51, 234, 0.6)');
+                ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0, 191, 255, 0.8)' : 'rgba(147, 51, 234, 0.7)';
                 ctx.fill();
             }
             requestAnimationFrame(animateParticles);
@@ -235,25 +236,14 @@ components.html("""
 # --- CORPS DE L'APPLICATION ---
 
 # Header
-title_col, mode_col = st.columns([4, 1])
-with title_col:
-    st.markdown("""
-    <div class="glass-card" style="margin-bottom: 1rem; padding: 1rem 1.5rem;">
-        <h1 class="font-orbitron" style="font-size: 2.25rem; font-weight: bold; color: var(--text-color); letter-spacing: 0.1em; margin: 0; transition: color 0.5s;">
-            PROJET <span style="color: var(--glow-color);">ARIA</span>
-        </h1>
-        <p style="color: var(--text-color-light); margin: 0; transition: color 0.5s;">Autonomous Research & Intelligence Agent 🤖</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-with mode_col:
-    st.markdown('<div class="glass-card" style="margin-bottom: 1rem; height: 95px;">', unsafe_allow_html=True)
-    light_mode = st.toggle("Thème Clair", key="light_mode")
-    if light_mode:
-        components.html("<script>document.body.classList.add('light-mode');</script>", height=0)
-    else:
-        components.html("<script>document.body.classList.remove('light-mode');</script>", height=0)
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("""
+<div class="glass-card" style="margin-bottom: 1rem;">
+    <h1 class="font-orbitron" style="font-size: 2.25rem; font-weight: bold; color: var(--text-color); letter-spacing: 0.1em; margin: 0;">
+        PROJET <span style="color: var(--glow-color); text-shadow: 0 0 15px var(--glow-color);">ARIA</span>
+    </h1>
+    <p style="color: var(--text-color-light); margin: 0;">Autonomous Research & Intelligence Agent 🤖</p>
+</div>
+""", unsafe_allow_html=True)
 
 
 # Main Dashboard
@@ -263,9 +253,8 @@ col1, col2, col3 = st.columns(3)
 with col1:
     with st.container(border=False):
         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        st.markdown("""<h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color); border-bottom: 2px solid var(--glow-color); padding-bottom: 0.5rem; margin-bottom: 1rem; transition: color 0.5s;">🎛️ Panneau de Contrôle</h2>""", unsafe_allow_html=True)
+        st.markdown("""<h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color); border-bottom: 2px solid var(--glow-color); padding-bottom: 0.5rem; margin-bottom: 1rem;">🎛️ Panneau de Contrôle</h2>""", unsafe_allow_html=True)
         
-        # Bouton de téléchargement PDF
         st.download_button(
             label="📄 Télécharger le Rapport PDF",
             data=generate_report_pdf(),
@@ -274,14 +263,13 @@ with col1:
             use_container_width=True
         )
         
-        # Mode Autonome
         autonomous_mode = st.toggle("Mode autonome", help="ARIA relance l’analyse toutes les X heures et prévient si les insights changent.")
         if autonomous_mode:
             st.info("Mode autonome activé. ARIA surveille le secteur en arrière-plan.", icon="🛰️")
 
         st.markdown('<div style="margin-top: 1.5rem;"></div>', unsafe_allow_html=True)
         
-        st.markdown("""<h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color); border-bottom: 2px solid var(--glow-color-purple); padding-bottom: 0.5rem; margin-bottom: 1rem; transition: color 0.5s;">🛠️ Stack Technique</h2>""", unsafe_allow_html=True)
+        st.markdown("""<h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color); border-bottom: 2px solid var(--glow-color-purple); padding-bottom: 0.5rem; margin-bottom: 1rem;">🛠️ Stack Technique</h2>""", unsafe_allow_html=True)
         st.markdown("""
         <ul style="list-style: none; padding: 0; font-size: 0.9rem;">
             <li><b>Frontend:</b> Streamlit + CSS/JS</li>
@@ -297,23 +285,25 @@ with col1:
 with col2:
     st.markdown("""
     <div class="glass-card" style="text-align: center;">
-        <h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color); transition: color 0.5s;">🧠 Simulation Agent IA</h2>
-        <div class="agent-avatar"></div>
+        <h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color);">🧠 Simulation Agent IA</h2>
+        <div class="agent-avatar">
+            <div class="scanline"></div>
+        </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; margin-top: 1rem;">
             <div class="glass-card" style="padding: 0.75rem">
                 <div class="font-orbitron" id="neural-activity" style="font-size: 1.875rem; color: var(--glow-color); font-weight: bold;">1.38</div>
-                <div style="font-size: 0.7rem; color: var(--text-color-light); text-transform: uppercase; transition: color 0.5s;">Activité Neuronale</div>
+                <div style="font-size: 0.7rem; color: var(--text-color-light); text-transform: uppercase;">Activité Neuronale</div>
                 <canvas id="neural-chart" height="30" class="w-full mt-2"></canvas>
             </div>
             <div class="glass-card" style="padding: 0.75rem">
                 <div class="font-orbitron" id="confidence-score" style="font-size: 1.875rem; color: var(--glow-color-purple); font-weight: bold;">92.7%</div>
-                <div style="font-size: 0.7rem; color: var(--text-color-light); text-transform: uppercase; transition: color 0.5s;">Score de Confiance</div>
+                <div style="font-size: 0.7rem; color: var(--text-color-light); text-transform: uppercase;">Score de Confiance</div>
                 <div style="width: 100%; background: #374151; border-radius: 999px; height: 6px; margin-top: 10px;">
                     <div id="confidence-bar" style="background: var(--glow-color-purple); height: 6px; border-radius: 999px; width: 92.7%; transition: width 0.5s ease;"></div>
                 </div>
             </div>
         </div>
-        <h3 class="font-orbitron" style="font-size: 1.125rem; color: var(--text-color); margin-top: 1rem; margin-bottom: 0.5rem; text-align: left; transition: color 0.5s;">Processus de Pensée...</h3>
+        <h3 class="font-orbitron" style="font-size: 1.125rem; color: var(--text-color); margin-top: 1rem; margin-bottom: 0.5rem; text-align: left;">Processus de Pensée...</h3>
         <div id="thinking-process" class="glass-card" style="height: 120px; overflow-y: auto; text-align: left; padding: 1rem; font-size: 0.875rem;"></div>
     </div>
     """, unsafe_allow_html=True)
@@ -322,18 +312,18 @@ with col2:
 with col3:
     st.markdown("""
     <div class="glass-card">
-        <h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color); border-bottom: 2px solid var(--glow-color); padding-bottom: 0.5rem; margin-bottom: 1rem; transition: color 0.5s;">✨ Insights Stratégiques</h2>
+        <h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color); border-bottom: 2px solid var(--glow-color); padding-bottom: 0.5rem; margin-bottom: 1rem;">✨ Insights Stratégiques</h2>
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
             <div class="glass-card neon-border" style="--glow-color: #34d399;">
                 <h3 style="font-weight: bold; font-size: 1.1rem; color: #6ee7b7;">Opportunités</h3>
-                <p style="font-size: 0.8rem; color: var(--text-color); margin: 0; transition: color 0.5s;">Expansion des services BNPL pour les TPE/PME.</p>
+                <p style="font-size: 0.8rem; color: var(--text-color); margin: 0;">Expansion des services BNPL pour les TPE/PME.</p>
             </div>
             <div class="glass-card neon-border" style="--glow-color: #f87171;">
                 <h3 style="font-weight: bold; font-size: 1.1rem; color: #fca5a5;">Menaces</h3>
-                <p style="font-size: 0.8rem; color: var(--text-color); margin: 0; transition: color 0.5s;">Intensification de la régulation RGPD.</p>
+                <p style="font-size: 0.8rem; color: var(--text-color); margin: 0;">Intensification de la régulation RGPD.</p>
             </div>
         </div>
-        <h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color); border-bottom: 2px solid var(--glow-color-purple); padding-bottom: 0.5rem; margin-top: 1.5rem; margin-bottom: 1rem; transition: color 0.5s;">🤖 Chat avec l'Agent</h2>
+        <h2 class="font-orbitron" style="font-size: 1.25rem; font-weight: bold; color: var(--text-color); border-bottom: 2px solid var(--glow-color-purple); padding-bottom: 0.5rem; margin-top: 1.5rem; margin-bottom: 1rem;">🤖 Chat avec l'Agent</h2>
     </div>
     """, unsafe_allow_html=True)
     
@@ -378,10 +368,10 @@ components.html(f"""
         const confidenceEl = document.getElementById('confidence-score');
         const confidenceBar = document.getElementById('confidence-bar');
         const thinkingEl = document.getElementById('thinking-process');
-        const statusEl = document.getElementById('agent-status');
+        const statusEl = document.querySelector('span[style*="color: #c084fc"]'); // Ciblage plus robuste
         const chartCanvas = document.getElementById('neural-chart');
         
-        if (!neuralEl || !confidenceEl || !confidenceBar || !thinkingEl || !statusEl || !chartCanvas) return;
+        if (!neuralEl || !confidenceEl || !confidenceBar || !thinkingEl || !chartCanvas) return;
 
         let activityData = Array(20).fill(1.5);
         const chartCtx = chartCanvas.getContext('2d');
@@ -391,7 +381,7 @@ components.html(f"""
             chartCtx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
             chartCtx.beginPath();
             chartCtx.moveTo(0, chartCanvas.height / 2);
-            chartCtx.strokeStyle = document.body.classList.contains('light-mode') ? 'rgba(0,0,0,0.5)' : 'rgba(0, 255, 255, 0.8)';
+            chartCtx.strokeStyle = 'rgba(0, 191, 255, 0.8)';
             chartCtx.lineWidth = 2;
             const sliceWidth = chartCanvas.width / (activityData.length - 1);
             activityData.forEach((v, i) => chartCtx.lineTo(i * sliceWidth, (1 - (v - 0.5) / 2) * chartCanvas.height));
@@ -432,12 +422,7 @@ components.html(f"""
         drawNeuralChart();
     }}
     
-    // Assurer que le script s'exécute après le chargement des éléments
     window.addEventListener('load', runSimulations);
-    // Relancer en cas de re-render par Streamlit
-    if (typeof parent.stBridges !== 'undefined') {{
-        parent.stBridges.events.on('rendered', runSimulations);
-    }}
 </script>
 """, height=0)
 
