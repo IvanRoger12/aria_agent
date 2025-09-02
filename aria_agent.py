@@ -20,153 +20,106 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# CSS personnalisé (UNIQUEMENT style : fond bleu, texte blanc, titres en blanc gras, accents jaunes, clignotement)
+# =========================
+# CSS — THÈME BLEU FONCÉ + CARTES BLANCHES (lisibilité maximale)
+# =========================
 st.markdown("""
 <style>
     :root{
-        --bg1:#0b1224; --bg2:#08101f; 
-        --card: rgba(10,17,33,.96);
-        --white:#ffffff; --muted:#e9f0ff; 
-        --blue:#2f7df4; --violet:#7c58f4; 
-        --green:#10b981; --yellow:#ffd84d; --danger:#ef4444;
-        --border: rgba(255,255,255,.18);
+        --bg-deep:#0b1530;          /* Bleu foncé uniforme (fond global) */
+        --blue:#1d4ed8;             /* Bleu principal */
+        --blue-700:#1e3a8a;         /* Bleu titre sur fond blanc */
+        --blue-600:#2563eb;
+        --blue-300:#93c5fd;
+        --white:#ffffff;
+        --text-dark:#0f172a;        /* Texte sur fond blanc */
+        --border:#e5e7eb;           /* Bordure claire des cartes */
+        --muted:#64748b;            /* Texte secondaire */
     }
 
-    /* Fond global bleu + halo léger */
+    /* Fond global simple, SANS dégradé */
     .main {
-        background:
-          radial-gradient(1200px 800px at 10% -10%, rgba(47,125,244,.15), transparent 50%),
-          radial-gradient(1000px 700px at 90% 10%, rgba(124,88,244,.18), transparent 60%),
-          linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
-        color: var(--white);
+        background: var(--bg-deep) !important;
+        color: var(--white) !important;
+        font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
     }
 
-    /* Tout le texte = blanc lisible (désactive les anciennes couleurs trop grisées) */
-    h1, h2, h3, h4, h5, h6 { 
-        color: var(--white) !important; 
-        font-weight: 800 !important; 
+    /* Titres globaux très visibles sur fond bleu foncé */
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--white) !important;
+        font-weight: 800 !important;
         letter-spacing: .2px;
-        text-shadow: 0 0 8px rgba(0,0,0,.5);
-    }
-    p, span, div, li { color: var(--white) !important; }
-    /* Sous-titres bien visibles + possibilité d’accent jaune si besoin */
-    .subtitle-white { color: var(--white) !important; font-weight: 800 !important; }
-    .subtitle-yellow { color: var(--yellow) !important; font-weight: 800 !important; text-shadow: 0 0 10px rgba(255,216,77,.9); }
-
-    /* Neutralise le h1 en dégradé défini inline pour le rendre blanc net */
-    h1[style*="-webkit-text-fill-color: transparent"]{
-        -webkit-text-fill-color: #fff !important;
-        background: none !important;
-        color: #fff !important;
-        text-shadow: 0 0 10px rgba(0,0,0,.6);
+        text-shadow: 0 1px 2px rgba(0,0,0,.45);
     }
 
-    /* Cartes contrastées (moins de flou, plus de lisibilité) */
-    .analysis-card, .metric-card, .thought-bubble {
-        background: var(--card) !important;
-        backdrop-filter: blur(3px) !important;
-        -webkit-backdrop-filter: blur(3px) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 18px !important;
-        box-shadow: 0 16px 40px rgba(0,0,0,.45), 0 0 24px rgba(47,125,244,.12) !important;
-    }
-
-    /* Select & Buttons relookés (bleu → violet) */
+    /* Composants Streamlit (select, boutons) adaptés au thème */
     .stSelectbox > div > div {
-        background-color: rgba(255, 255, 255, 0.06) !important;
-        color: #fff !important;
-        border: 1px solid rgba(255, 255, 255, 0.28) !important;
+        background-color: var(--white) !important;
+        color: var(--text-dark) !important;
+        border: 1px solid var(--border) !important;
         border-radius: 10px !important;
     }
     .stButton > button {
-        background: linear-gradient(45deg, var(--blue), var(--violet)) !important;
-        color: white !important;
+        background: var(--blue) !important;
+        color: var(--white) !important;
         border: none !important;
-        border-radius: 12px !important;
-        font-weight: 800 !important;
-        box-shadow: 0 10px 25px rgba(47,125,244,.35), 0 0 16px rgba(124,88,244,.25) !important;
-        transition: transform .2s, box-shadow .2s, filter .2s !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        transition: transform .15s ease, box-shadow .2s ease !important;
+        box-shadow: 0 8px 18px rgba(29,78,216,.25) !important;
     }
     .stButton > button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 16px 35px rgba(124,88,244,.45), 0 0 24px rgba(47,125,244,.35) !important;
-        filter: brightness(1.05) !important;
+        background: var(--blue-600) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 10px 22px rgba(37,99,235,.28) !important;
     }
 
-    /* Pulsation agent et clignotement statut + plus lumineux */
-    .agent-thinking {
-        background: linear-gradient(45deg, #153a6b, #2f7df4) !important;
-        animation: pulse 2s infinite !important;
-        border-radius: 15px !important;
-        padding: 15px !important;
-        margin: 10px 0 !important;
-        box-shadow: 0 0 14px rgba(47,125,244,.45) !important;
+    /* Cartes : BLANCHES, bords doux, ombre subtile ; texte bleu foncé */
+    .metric-card, .analysis-card, .thought-bubble {
+        background: var(--white) !important;
+        color: var(--text-dark) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 16px !important;
+        padding: 20px !important;
+        box-shadow: 0 10px 24px rgba(2, 8, 23, .20) !important;
     }
-    @keyframes pulse {
-        0% { opacity: 0.86; transform: scale(1); }
-        50% { opacity: 1; transform: scale(1.01); }
-        100% { opacity: 0.86; transform: scale(1); }
+    /* Titres internes aux cartes en bleu (fort contraste) */
+    .analysis-card h3, .analysis-card h4,
+    .metric-card h3, .metric-card h4,
+    .thought-bubble h3, .thought-bubble h4 {
+        color: var(--blue-700) !important;
+        font-weight: 800 !important;
+        margin: 0 0 10px 0 !important;
+        text-shadow: none !important;
     }
+    /* Paragraphe / texte secondaire dans les cartes */
+    .analysis-card p, .metric-card p, .thought-bubble p, .metric-card span {
+        color: var(--text-dark) !important;
+    }
+
+    /* Bandeau statut (reste lisible sur fond bleu foncé) */
     .status-indicator {
         width: 12px; height: 12px; border-radius: 50%;
         display: inline-block; margin-right: 8px;
-        animation: statusBlink 1.2s infinite;
-        box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+        animation: statusBlink 1.5s infinite;
     }
-    @keyframes statusBlink {
-        0%, 100% { opacity: 1; filter: drop-shadow(0 0 6px rgba(255,255,255,.5)); }
-        50% { opacity: .55; filter: drop-shadow(0 0 2px rgba(255,255,255,.2)); }
-    }
+    @keyframes statusBlink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: .35; } }
 
-    /* Bulles de pensée plus nettes */
+    /* Bulle de pensée : cadre bleu sur fond BLANC */
     .thought-bubble {
-        background: rgba(47,125,244, 0.10) !important;
         border-left: 5px solid var(--blue) !important;
-        animation: slideIn .45s ease-out !important;
+        background: var(--white) !important;
+        animation: slideIn .35s ease-out;
     }
-    @keyframes slideIn {
-        from { opacity: 0; transform: translateX(-18px); }
-        to   { opacity: 1; transform: translateX(0); }
-    }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-14px);} to { opacity:1; transform: translateX(0);} }
 
-    /* Zone “réseau neuronal” bleu sombre */
-    .neural-network {
-        background: linear-gradient(135deg, #0a1730, #0d1b3a) !important;
-        border-radius: 15px !important;
-        padding: 20px !important;
-        position: relative !important;
-        overflow: hidden !important;
-        border: 1px solid rgba(255,255,255,.12);
-    }
-    .neural-node {
-        width: 8px; height: 8px; background: #89b7ff !important;
-        border-radius: 50%; position: absolute;
-        animation: neuralPulse 2s infinite ease-in-out;
-        box-shadow: 0 0 10px #2f7df4, 0 0 18px #2f7df4;
-    }
-    @keyframes neuralPulse {
-        0%, 100% { opacity: 0.4; transform: scale(1); }
-        50% { opacity: 1; transform: scale(1.2); }
-    }
+    /* Cartes "opportunités/menaces/tendances" : fond très léger + bord gauche coloré */
+    .ins-op { background: #f0fdf4 !important; border-left: 6px solid #10b981 !important; }
+    .ins-th { background: #fef2f2 !important; border-left: 6px solid #ef4444 !important; }
+    .ins-tr { background: #f5f3ff !important; border-left: 6px solid #8b5cf6 !important; }
 
-    /* Cartes d’analyse */
-    .analysis-card {
-        background: rgba(12, 20, 40, 0.98) !important;
-        backdrop-filter: blur(4px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.14) !important;
-        border-radius: 20px !important;
-        padding: 25px !important;
-        margin: 15px 0 !important;
-        box-shadow: 0 16px 40px rgba(0,0,0,0.45), 0 0 20px rgba(47,125,244,0.12) !important;
-    }
-
-    /* Encarts de catégories (opportunités/menaces/tendances) */
-    .ins-opp { background: rgba(16,185,129,.12) !important; border-left: 6px solid var(--green) !important; }
-    .ins-thr { background: rgba(239,68,68,.12) !important;  border-left: 6px solid var(--danger) !important; }
-    .ins-trd { background: rgba(124,88,244,.12) !important;  border-left: 6px solid var(--violet) !important; }
-
-    /* Renforce la lisibilité des petits textes métriques */
-    .metric-card p:first-child{ color: var(--muted) !important; }
+    /* Petites améliorations d'espacements */
+    .block-container { padding-top: 1.2rem !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -235,7 +188,7 @@ class ARIAAgent:
                 "status_analyzing": "⚡ Multi-dimensional analysis active",
                 "status_completed": "✨ Mission accomplished - Insights generated",
                 "sectors": {
-                    "FinTech": "Financial Technologies",
+                    "FinTech": "Financial Technologies", 
                     "HealthTech": "Health Technologies", 
                     "SaaS": "Software as a Service",
                     "E-commerce": "Electronic Commerce",
@@ -326,36 +279,35 @@ class ARIAAgent:
             self.neural_activity += random.randint(-30, 50)
     
     def generate_confidence_gauge(self) -> go.Figure:
-        """Génère un graphique de confiance"""
+        """Génère un graphique de confiance (polices adaptées au fond blanc des cartes)"""
         fig = go.Figure(go.Indicator(
             mode = "gauge+number+delta",
             value = self.confidence_level,
             domain = {'x': [0, 1], 'y': [0, 1]},
-            title = {'text': "Confidence Level", 'font': {'color': '#ffffff'}},
-            delta = {'reference': 80, 'increasing': {'color': '#2f7df4'}},
+            title = {'text': "Confidence Level"},
+            delta = {'reference': 80},
             gauge = {
-                'axis': {'range': [None, 100], 'tickcolor':'#cfe1ff'},
-                'bar': {'color': "#2f7df4"},
+                'axis': {'range': [None, 100], 'tickcolor': '#0f172a'},
+                'bar': {'color': "#2563eb"},
                 'steps': [
-                    {'range': [0, 50], 'color': "#1d2337"},
-                    {'range': [50, 80], 'color': "#122245"},
-                    {'range': [80, 100], 'color': "#0f2e5f"}
+                    {'range': [0, 50], 'color': "#fee2e2"},
+                    {'range': [50, 80], 'color': "#fef3c7"},
+                    {'range': [80, 100], 'color': "#dcfce7"}
                 ],
                 'threshold': {
-                    'line': {'color': "#ffd84d", 'width': 4},
+                    'line': {'color': "#8b5cf6", 'width': 4},
                     'thickness': 0.75,
                     'value': 90
                 }
             }
         ))
-        
+        # >>> ICI la police devient sombre pour rester lisible sur CARTE BLANCHE
         fig.update_layout(
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            font={'color': "white", 'family': "Arial"},
+            font={'color': "#0f172a", 'family': "Inter, Arial"},
             height=300
         )
-        
         return fig
     
     def generate_neural_network_viz(self) -> go.Figure:
@@ -377,10 +329,10 @@ class ARIAAgent:
         
         edge_trace = go.Scatter(
             x=edge_x, y=edge_y,
-            line=dict(width=0.8, color='rgba(47,125,244,.75)'),
+            line=dict(width=0.7, color='#2563eb'),
             hoverinfo='none',
             mode='lines',
-            opacity=0.85
+            opacity=0.75
         )
         
         node_trace = go.Scatter(
@@ -389,8 +341,8 @@ class ARIAAgent:
             hoverinfo='text',
             marker=dict(
                 size=8,
-                color='#7c58f4',
-                line=dict(width=2, color='#2f7df4')
+                color='#60a5fa',
+                line=dict(width=2, color='#1d4ed8')
             )
         )
         
@@ -405,7 +357,7 @@ class ARIAAgent:
                 xref="paper", yref="paper",
                 x=0.005, y=-0.002,
                 xanchor='left', yanchor='bottom',
-                font=dict(color="white", size=12)
+                font=dict(color="#0f172a", size=12)
             )],
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
@@ -433,10 +385,10 @@ def main():
     with col1:
         st.markdown(f"""
         <div style='margin-bottom: 30px;'>
-            <h1 style='background: linear-gradient(45deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 3rem; margin: 0; font-weight: 800;'>
+            <h1 style='color:#ffffff !important; font-size: 3rem; margin: 0; font-weight:800;'>
                 🧠 {agent.get_translation('agent_name')}
             </h1>
-            <p style='font-size: 1.2rem; margin: 0;'>
+            <p style='color: #e2e8f0; font-size: 1.1rem; margin: 0;'>
                 {agent.get_translation('agent_desc')}
             </p>
         </div>
@@ -457,40 +409,40 @@ def main():
         # Panel de contrôle de l'agent
         st.markdown("""
         <div class='analysis-card'>
-            <h3 style='text-align: center; margin-bottom: 20px;'>🤖 Agent Control Panel</h3>
+            <h3>🤖 Agent Control Panel</h3>
         """, unsafe_allow_html=True)
         
         # Avatar de l'agent avec statut
         status_color = {
             "idle": "#6b7280",
             "thinking": "#f59e0b", 
-            "analyzing": "#2f7df4",
+            "analyzing": "#1d4ed8",
             "completed": "#10b981"
         }.get(agent.status, "#6b7280")
         
         st.markdown(f"""
         <div style='text-align: center; margin: 20px 0;'>
             <div style='position: relative; display: inline-block;'>
-                <div style='width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(45deg, #2f7df4, #7c58f4); display: flex; align-items: center; justify-content: center; margin: 0 auto; {"animation: pulse 2s infinite;" if agent.status != "idle" else ""}'>
-                    <span style='font-size: 2rem;'>🤖</span>
+                <div style='width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(45deg, #1d4ed8, #2563eb); display: flex; align-items: center; justify-content: center; margin: 0 auto; {"animation: pulse 2s infinite;" if agent.status != "idle" else ""}'>
+                    <span style='font-size: 2rem; color:#fff;'>🤖</span>
                 </div>
-                <div class='status-indicator' style='position: absolute; bottom: 0; right: 0; width: 20px; height: 20px; border-radius: 50%; background: {status_color}; border: 2px solid white;'></div>
+                <div style='position: absolute; bottom: 0; right: 0; width: 20px; height: 20px; border-radius: 50%; background: {status_color}; border: 2px solid white; {"animation: statusBlink 1.5s infinite;" if agent.status in ["thinking", "analyzing"] else ""}'></div>
             </div>
-            <h4 style='margin: 10px 0 5px 0; font-weight: 800;'>{agent.get_translation("agent_name")}</h4>
-            <p style='font-size: 0.9rem; margin: 0;'>Neural Activity: {agent.neural_activity}</p>
+            <h4 style='color: var(--blue-700); margin: 10px 0 5px 0; font-weight:800;'>{agent.get_translation("agent_name")}</h4>
+            <p style='color: var(--muted); font-size: 0.9rem; margin: 0;'>Neural Activity: {agent.neural_activity}</p>
         </div>
         """, unsafe_allow_html=True)
         
         # Statut de l'agent
         status_text = agent.get_translation(f"status_{agent.status}")
         st.markdown(f"""
-        <div style='background: rgba(47, 125, 244, 0.12); border:1px solid rgba(47,125,244,.35); border-radius: 12px; padding: 15px; margin: 20px 0; text-align: center; box-shadow: 0 0 14px rgba(47,125,244,.25);'>
-            <p style='margin: 0; font-weight: 800;'>{status_text}</p>
+        <div class='metric-card' style='text-align: center;'>
+            <p style='color: var(--blue-700); margin: 0; font-weight: 800;'>{status_text}</p>
         </div>
         """, unsafe_allow_html=True)
         
         # Sélection du secteur
-        st.markdown("<p style='font-weight: 800; margin-bottom: 10px;'>🎯 Target Sector:</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#ffffff; font-weight: 700; margin-bottom: 8px;'>🎯 Target Sector:</p>", unsafe_allow_html=True)
         sectors = agent.get_translation("sectors")
         sector_options = list(sectors.keys())
         sector_labels = list(sectors.values())
@@ -527,7 +479,7 @@ def main():
         
         # Métriques temps réel
         if agent.status != "idle":
-            st.markdown("<br><h4>📊 Real-time Metrics</h4>", unsafe_allow_html=True)
+            st.markdown("<br><h4 style='color:#ffffff;'>📊 Real-time Metrics</h4>", unsafe_allow_html=True)
             
             metrics_data = {
                 "Neural Activity": f"{agent.neural_activity}",
@@ -539,8 +491,8 @@ def main():
             for metric, value in metrics_data.items():
                 st.markdown(f"""
                 <div class='metric-card'>
-                    <p style='margin: 0; font-size: 0.8rem; color: var(--muted) !important;'>{metric}</p>
-                    <p style='margin: 0; font-size: 1.2rem; font-weight: 800;'>{value}</p>
+                    <p style='color: var(--muted); margin: 0; font-size: 0.8rem;'>{metric}</p>
+                    <p style='color: var(--blue-700); margin: 0; font-size: 1.2rem; font-weight: 800;'>{value}</p>
                 </div>
                 """, unsafe_allow_html=True)
         
@@ -551,7 +503,7 @@ def main():
         if agent.status != "idle" and agent.thoughts:
             st.markdown("""
             <div class='analysis-card'>
-                <h3 style='margin-bottom: 20px;'>🧠 <span class='subtitle-yellow'>Agent Thought Process</span></h3>
+                <h3>🧠 Agent Thought Process</h3>
             </div>
             """, unsafe_allow_html=True)
             
@@ -560,12 +512,12 @@ def main():
                 st.markdown(f"""
                 <div class='thought-bubble'>
                     <div style='display: flex; align-items: center; margin-bottom: 8px;'>
-                        <span style='background: linear-gradient(45deg, #2f7df4, #7c58f4); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-right: 12px; box-shadow: 0 0 14px rgba(47,125,244,.35);'>
+                        <span style='background: linear-gradient(45deg, #1d4ed8, #2563eb); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-right: 12px; color:#fff;'>
                             🤖
                         </span>
                         <div>
-                            <p style='margin: 0; font-size: 0.95rem; font-weight: 700;'>{thought.content}</p>
-                            <p style='margin: 0; font-size: 0.75rem; color: var(--muted) !important;'>{thought.timestamp.strftime("%H:%M:%S")}</p>
+                            <p style='color: var(--text-dark); margin: 0; font-size: 0.95rem; font-weight:700;'>{thought.content}</p>
+                            <p style='color: var(--muted); margin: 0; font-size: 0.75rem;'>{thought.timestamp.strftime("%H:%M:%S")}</p>
                         </div>
                     </div>
                 </div>
@@ -578,9 +530,9 @@ def main():
             # Synthèse exécutive
             st.markdown(f"""
             <div class='analysis-card'>
-                <h3 style='margin-bottom: 20px;'>📋 Executive Summary</h3>
-                <div style='background: linear-gradient(45deg, rgba(47, 125, 244, 0.18), rgba(124, 88, 244, 0.18)); border-left: 6px solid #2f7df4; padding: 20px; border-radius: 12px;'>
-                    <p style='margin: 0; line-height: 1.6; color: var(--muted) !important;'>{agent.current_analysis.get("summary", "")}</p>
+                <h3>📋 Executive Summary</h3>
+                <div style='background: #f8fbff; border:1px solid #e6efff; border-left: 4px solid var(--blue); padding: 18px; border-radius: 10px;'>
+                    <p style='color: var(--text-dark); margin: 0; line-height: 1.6;'>{agent.current_analysis.get("summary", "")}</p>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -589,7 +541,7 @@ def main():
             if agent.confidence_level > 0:
                 st.markdown("""
                 <div class='analysis-card'>
-                    <h3 style='margin-bottom: 20px;'>📊 <span class='subtitle-yellow'>Confidence Analysis</span></h3>
+                    <h3>📊 Confidence Analysis</h3>
                 </div>
                 """, unsafe_allow_html=True)
                 
@@ -601,7 +553,7 @@ def main():
             if insights:
                 st.markdown("""
                 <div class='analysis-card'>
-                    <h3 style='margin-bottom: 20px;'>🎯 Detected Insights</h3>
+                    <h3>🎯 Detected Insights</h3>
                 </div>
                 """, unsafe_allow_html=True)
                 
@@ -611,43 +563,43 @@ def main():
                 trends = [i for i in insights if i.category == "trend"]
                 
                 if opportunities:
-                    st.markdown("<h4>💡 Opportunities</h4>", unsafe_allow_html=True)
+                    st.markdown("<h4 style='color:#ffffff;'>💡 Opportunities</h4>", unsafe_allow_html=True)
                     for opp in opportunities:
                         st.markdown(f"""
-                        <div class='ins-opp' style='padding: 15px; margin: 10px 0; border-radius: 12px;'>
-                            <h5 style='margin: 0 0 8px 0; font-weight: 800;'>{opp.title}</h5>
-                            <p style='margin: 0 0 8px 0; font-size: 0.9rem; color: var(--muted) !important;'>{opp.description}</p>
-                            <div style='display: flex; justify-content: space-between; align-items: center; font-size: .9rem;'>
+                        <div class="metric-card ins-op">
+                            <h5 style='color: var(--blue-700); margin: 0 0 6px 0; font-weight:800;'>{opp.title}</h5>
+                            <p style='color: var(--text-dark); margin: 0 0 8px 0; font-size: 0.95rem;'>{opp.description}</p>
+                            <div style='display: flex; gap: 16px; align-items: center; color: #065f46; font-size:.9rem;'>
                                 <span>Impact: <b>{opp.impact_score}/10</b></span>
-                                <span style='color: #22c55e;'>Confidence: <b>{opp.confidence}%</b></span>
+                                <span>Confidence: <b>{opp.confidence}%</b></span>
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
                 
                 if threats:
-                    st.markdown("<h4>⚠️ Threats</h4>", unsafe_allow_html=True)
+                    st.markdown("<h4 style='color:#ffffff;'>⚠️ Threats</h4>", unsafe_allow_html=True)
                     for threat in threats:
                         st.markdown(f"""
-                        <div class='ins-thr' style='padding: 15px; margin: 10px 0; border-radius: 12px;'>
-                            <h5 style='margin: 0 0 8px 0; font-weight: 800;'>{threat.title}</h5>
-                            <p style='margin: 0 0 8px 0; font-size: 0.9rem; color: var(--muted) !important;'>{threat.description}</p>
-                            <div style='display: flex; justify-content: space-between; align-items: center; font-size: .9rem;'>
+                        <div class="metric-card ins-th">
+                            <h5 style='color: var(--blue-700); margin: 0 0 6px 0; font-weight:800;'>{threat.title}</h5>
+                            <p style='color: var(--text-dark); margin: 0 0 8px 0; font-size: 0.95rem;'>{threat.description}</p>
+                            <div style='display: flex; gap: 16px; align-items: center; color: #7f1d1d; font-size:.9rem;'>
                                 <span>Impact: <b>{threat.impact_score}/10</b></span>
-                                <span style='color: #f87171;'>Confidence: <b>{threat.confidence}%</b></span>
+                                <span>Confidence: <b>{threat.confidence}%</b></span>
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
                 
                 if trends:
-                    st.markdown("<h4>📈 Trends</h4>", unsafe_allow_html=True)
+                    st.markdown("<h4 style='color:#ffffff;'>📈 Trends</h4>", unsafe_allow_html=True)
                     for trend in trends:
                         st.markdown(f"""
-                        <div class='ins-trd' style='padding: 15px; margin: 10px 0; border-radius: 12px;'>
-                            <h5 style='margin: 0 0 8px 0; font-weight: 800;'>{trend.title}</h5>
-                            <p style='margin: 0 0 8px 0; font-size: 0.9rem; color: var(--muted) !important;'>{trend.description}</p>
-                            <div style='display: flex; justify-content: space-between; align-items: center; font-size: .9rem;'>
+                        <div class="metric-card ins-tr">
+                            <h5 style='color: var(--blue-700); margin: 0 0 6px 0; font-weight:800;'>{trend.title}</h5>
+                            <p style='color: var(--text-dark); margin: 0 0 8px 0; font-size: 0.95rem;'>{trend.description}</p>
+                            <div style='display: flex; gap: 16px; align-items: center; color: #4c1d95; font-size:.9rem;'>
                                 <span>Impact: <b>{trend.impact_score}/10</b></span>
-                                <span style='color: #a78bfa;'>Confidence: <b>{trend.confidence}%</b></span>
+                                <span>Confidence: <b>{trend.confidence}%</b></span>
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
@@ -657,24 +609,24 @@ def main():
             if recommendations:
                 st.markdown("""
                 <div class='analysis-card'>
-                    <h3 style='margin-bottom: 20px;'>🎯 <span class='subtitle-yellow'>AI Recommendations</span></h3>
+                    <h3>🎯 AI Recommendations</h3>
                 </div>
                 """, unsafe_allow_html=True)
                 
                 for i, rec in enumerate(recommendations, 1):
                     st.markdown(f"""
-                    <div style='display: flex; align-items: start; background: rgba(124, 88, 244, 0.12); border-radius: 12px; padding: 15px; margin: 10px 0; border: 1px solid rgba(124,88,244,.25);'>
-                        <div style='background: linear-gradient(45deg, #2f7df4, #7c58f4); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; color:#fff; font-weight: 800;'>
+                    <div style='display: flex; align-items: start; background: #f5f3ff; border:1px solid #e9e5ff; border-radius: 12px; padding: 14px; margin: 10px 0;'>
+                        <div style='background: linear-gradient(45deg, #1d4ed8, #2563eb); color:#fff; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0; font-weight:800;'>
                             {i}
                         </div>
-                        <p style='margin: 0; line-height: 1.55;'>{rec}</p>
+                        <p style='color: var(--text-dark); margin: 0; line-height: 1.55;'>{rec}</p>
                     </div>
                     """, unsafe_allow_html=True)
             
             # Actions et export
             st.markdown("""
             <div class='analysis-card'>
-                <h3 style='margin-bottom: 20px;'>📤 Export & Actions</h3>
+                <h3>📤 Export & Actions</h3>
             </div>
             """, unsafe_allow_html=True)
             
@@ -682,7 +634,7 @@ def main():
             
             with col1:
                 if st.button("📄 Export Report", key="export_btn"):
-                    # Génération d'un rapport texte simple
+                    # Génération d'un rapport texte simulé
                     report_content = f"""
                     🤖 ARIA - STRATEGIC INTELLIGENCE REPORT
                     Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
@@ -694,14 +646,13 @@ def main():
                     
                     KEY INSIGHTS:
                     """
-                    insights = agent.current_analysis.get("insights", [])
                     for insight in insights:
-                        report_content += f"\\n• {insight.title} (Impact: {insight.impact_score}/10, Confidence: {insight.confidence}%)"
-                        report_content += f"\\n  {insight.description}\\n"
+                        report_content += f"\n• {insight.title} (Impact: {insight.impact_score}/10, Confidence: {insight.confidence}%)"
+                        report_content += f"\n  {insight.description}\n"
                     
-                    report_content += "\\nRECOMMENDATIONS:\\n"
+                    report_content += "\nRECOMMENDATIONS:\n"
                     for i, rec in enumerate(recommendations, 1):
-                        report_content += f"{i}. {rec}\\n"
+                        report_content += f"{i}. {rec}\n"
                     
                     st.download_button(
                         label="⬇️ Download Report",
@@ -726,12 +677,12 @@ def main():
         elif agent.status == "idle":
             st.markdown("""
             <div class='analysis-card' style='text-align: center; padding: 50px;'>
-                <div style='font-size: 4rem; margin-bottom: 20px;'>🤖</div>
-                <h3 style='margin-bottom: 15px;'>ARIA Ready for Mission</h3>
-                <p style='margin-bottom: 30px; color: var(--muted) !important;'>Select a target sector and activate the agent to begin strategic market analysis.</p>
-                <div style='background: rgba(47, 125, 244, 0.12); border:1px solid rgba(47,125,244,.35); border-radius: 12px; padding: 20px; margin: 20px 0;'>
-                    <h4 class='subtitle-yellow' style='margin-bottom: 15px;'>🧠 Agent Capabilities</h4>
-                    <ul style='text-align: left; list-style: none; padding: 0; margin:0;'>
+                <div style='font-size: 4rem; margin-bottom: 20px; color: var(--blue);'>🤖</div>
+                <h3 style='color: var(--blue-700); margin-bottom: 15px;'>ARIA Ready for Mission</h3>
+                <p style='color: var(--muted); margin-bottom: 26px;'>Select a target sector and activate the agent to begin strategic market analysis.</p>
+                <div style='background: #f0f7ff; border:1px solid #dbeafe; border-radius: 10px; padding: 18px;'>
+                    <h4 style='color: var(--blue-700); margin-bottom: 12px;'>🧠 Agent Capabilities</h4>
+                    <ul style='color: var(--text-dark); text-align: left; list-style: none; padding: 0; margin:0;'>
                         <li style='margin: 8px 0;'>🔍 Multi-source market intelligence gathering</li>
                         <li style='margin: 8px 0;'>⚡ Real-time trend analysis and prediction</li>
                         <li style='margin: 8px 0;'>🎯 Strategic opportunity identification</li>
@@ -742,7 +693,7 @@ def main():
             </div>
             """, unsafe_allow_html=True)
     
-    # Neural network visualization (sidebar) — inchangé
+    # Neural network visualization (sidebar)
     if agent.status in ["thinking", "analyzing"]:
         with st.sidebar:
             st.markdown("### 🧠 Neural Network Activity")
@@ -751,18 +702,16 @@ def main():
     
     # Footer
     st.markdown("""
-    <div style='margin-top: 50px; padding: 30px 0; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center;'>
-        <p style='margin: 0; color: var(--muted) !important;'>
-            🤖 ARIA - Autonomous Research & Intelligence Agent | 
-            Powered by Advanced AI Neural Networks | 
-            Confidence Level: {confidence}%
+    <div style='margin-top: 36px; padding: 20px 0; border-top: 1px solid rgba(255,255,255,.12); text-align: center;'>
+        <p style='color: #c7d2fe; margin: 0;'>
+            🤖 ARIA - Autonomous Research & Intelligence Agent • Confidence Level: {confidence} 
         </p>
-        <p style='font-size: 0.9rem; margin: 5px 0 0 0; color: var(--muted) !important;'>
-            Last Update: {timestamp} | Neural Activity: {activity} nodes
+        <p style='color: #a5b4fc; font-size: 0.9rem; margin: 6px 0 0 0;'>
+            Last Update: {timestamp} • Neural Activity: {activity} nodes
         </p>
     </div>
     """.format(
-        confidence=f"{agent.confidence_level:.1f}" if agent.confidence_level > 0 else "N/A",
+        confidence=f"{agent.confidence_level:.1f}%" if agent.confidence_level > 0 else "N/A",
         timestamp=datetime.now().strftime('%H:%M:%S'),
         activity=agent.neural_activity
     ), unsafe_allow_html=True)
