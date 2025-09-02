@@ -79,7 +79,8 @@ def generate_report_pdf():
     pdf.set_text_color(128, 128, 128)
     pdf.cell(0, 10, f'Rapport genere le {time.strftime("%d/%m/%Y a %H:%M:%S")}', 0, 1, 'C')
     
-    return pdf.output()
+    # CORRECTION ERREUR: Streamlit attend un objet `bytes`. On convertit explicitement.
+    return bytes(pdf.output())
 
 # --- INJECTION DU CSS PERSONNALISÉ (THÈME HAUT CONTRASTE)---
 CSS_CODE = """
@@ -88,7 +89,7 @@ CSS_CODE = """
 
     :root {
         --bg-color: #050816; /* Fond bleu très sombre, presque noir */
-        --card-bg-color: rgba(20, 25, 50, 0.85); /* Cartes plus opaques pour la lisibilité */
+        --card-bg-color: rgba(20, 25, 50, 0.9); /* Cartes ENCORE plus opaques pour la lisibilité */
         --text-color: #FFFFFF; /* Texte blanc pur */
         --text-color-light: #bdc3c7;
         --border-color: rgba(255, 255, 255, 0.2);
@@ -109,24 +110,25 @@ CSS_CODE = """
     #bg-canvas {
         position: fixed; top: 0; left: 0;
         width: 100%; height: 100%;
-        z-index: -1; opacity: 0.3; /* Particules plus présentes */
+        z-index: -1; opacity: 0.4; /* Particules un peu plus visibles */
     }
 
     .font-orbitron { font-family: 'Orbitron', sans-serif; }
 
     .glass-card {
         background: var(--card-bg-color);
-        backdrop-filter: blur(8px); /* Flou réduit pour plus de clarté */
-        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(5px); /* Flou TRES réduit pour un effet plus net */
+        -webkit-backdrop-filter: blur(5px);
         border: 1px solid var(--border-color);
         transition: all 0.3s ease;
         padding: 1.5rem; border-radius: 1rem;
         height: 100%;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* Ombre portée pour détacher du fond */
     }
     
     .glass-card:hover {
         border-color: var(--glow-color);
-        box-shadow: 0 0 20px rgba(0, 191, 255, 0.2);
+        box-shadow: 0 0 25px rgba(0, 191, 255, 0.3);
     }
     
     .agent-avatar {
