@@ -739,43 +739,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-# =======================
-# INSTRUCTIONS DE DÉPLOIEMENT
-# =======================
 
-"""
-🚀 DÉPLOIEMENT SIMPLE EN 3 ÉTAPES :
-
-1️⃣ CRÉER LE FICHIER requirements.txt :
----
-streamlit>=1.28.0
-plotly>=5.17.0
-asyncio
-requests>=2.31.0
----
-
-2️⃣ DÉPLOIEMENT LOCAL (TEST) :
-- Sauvegarde ce code dans un fichier "aria_agent.py"
-- Terminal : pip install -r requirements.txt
-- Terminal : streamlit run aria_agent.py
-- Ouvre : http://localhost:8501
-
-3️⃣ DÉPLOIEMENT CLOUD GRATUIT (PRODUCTION) :
-- Crée un repo GitHub avec : aria_agent.py + requirements.txt
-- Va sur : https://streamlit.io/cloud  
-- Connect GitHub → Deploy
-- URL publique générée automatiquement !
-
-🎯 RÉSULTAT :
-✅ Agent IA fonctionnel avec interface révolutionnaire
-✅ Multilingue (FR/EN) automatique
-✅ Design futuriste qui claque
-✅ Simulation réaliste d'intelligence artificielle
-✅ URL publique pour LinkedIn
-✅ 0€ de coût d'hébergement
-
-💡 BONUS LINKEDIN :
-Screenshot de l'interface → Post demain 9h
-"Mon Agent IA analyse les marchés en temps réel 🤖"
-Results garantis ! 🔥
-"""
