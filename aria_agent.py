@@ -1,159 +1,117 @@
-# app.py
-# 🤖 ARIA – Autonomous Research & Intelligence Agent (Streamlit)
-# Design futuriste (glassmorphism), bilingue FR/EN, animations, jauges, export.
+# app.py — ARIA Futuriste (net, néon, animations, LLM-ready, PDF, live graph)
+# pip install streamlit plotly reportlab (reportlab optionnel)
+import os, asyncio, random, textwrap
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import List, Dict, Optional
 
 import streamlit as st
-import asyncio
-import random
-from dataclasses import dataclass
-from datetime import datetime
-from typing import List, Dict, Optional
 import plotly.graph_objects as go
 
-# ============== CONFIG PAGE ==============
-st.set_page_config(
-    page_title="🤖 ARIA - AI Strategic Intelligence Agent",
-    page_icon="🧠",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
+# ====== CONFIG ======
+st.set_page_config(page_title="🤖 ARIA – Strategic Intelligence Agent", page_icon="🧠", layout="wide")
+AUTONOMY_KEY = "autonomous_enabled"
 
-# ============== CSS ULTRA FUTURISTE ==============
+# ====== CSS – Net, contrasté, glow néon, particules & grille subtile ======
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Hide Streamlit top & footer for immersive mode */
+header, [data-testid="stToolbar"], footer {visibility:hidden;}
+/* Base */
+:root{
+  --bg:#0b1020; --panel:#121a2e; --panel-2:#0f1829; --txt:#e6edf7; --muted:#96a2c6;
+  --primary:#7aa2ff; --accent:#a78bfa; --teal:#22d3ee; --green:#34d399; --red:#ef4444; --amber:#f59e0b;
+  --ring:rgba(122,162,255,.45);
+}
+html, body, .main { background: var(--bg); color: var(--txt); }
+.main::before, .main::after{content:"";position:fixed;inset:0;pointer-events:none;}
+/* moving grid */
+.main::after{
+  background-image: radial-gradient(circle at 25px 25px, rgba(122,162,255,.08) 1px, transparent 0);
+  background-size: 50px 50px; opacity:.35; filter:contrast(105%);
+  animation:gridMove 26s linear infinite;
+}
+@keyframes gridMove { 0%{transform:translate(0,0)}100%{transform:translate(50px,50px)} }
+/* soft particles */
+.main::before{
+  background:
+    radial-gradient(600px 300px at 15% 20%, rgba(167,139,250,.14), transparent 60%),
+    radial-gradient(600px 300px at 80% 30%, rgba(34,211,238,.12), transparent 60%),
+    radial-gradient(500px 260px at 30% 80%, rgba(52,211,153,.12), transparent 60%);
+  filter:saturate(110%);
+  animation:float 18s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translate(0,0)}50%{transform:translate(10px,-8px)}}
 
-    .main {
-        background: linear-gradient(135deg, #070B1A 0%, #0E0C2B 25%, #261B5E 50%, #0E0C2B 75%, #070B1A 100%);
-        background-size: 400% 400%;
-        animation: gradientShift 16s ease infinite;
-        color: white; font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden;
-    }
-    .stApp > div > div { position: relative; z-index: 2; }
+/* Header */
+.hero{
+  border:1px solid var(--ring); border-radius:22px; padding:22px 22px 16px;
+  background:linear-gradient(180deg, rgba(18,26,46,.85), rgba(12,18,34,.85));
+  box-shadow:0 10px 40px rgba(0,0,0,.35), 0 0 80px rgba(122,162,255,.08);
+}
+.title{
+  font-size:34px; font-weight:800;
+  background:linear-gradient(90deg, #7aa2ff 0%, #a78bfa 50%, #22d3ee 100%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  letter-spacing:.3px; margin:0;
+}
+.sub{color:var(--muted); margin:.3rem 0 0 0}
 
-    .main::before, .main::after { content:""; position: fixed; inset:0; pointer-events:none; }
-    .main::before {
-        background-image:
-          radial-gradient(circle at 20% 50%, rgba(59,130,246,0.12) 0%, transparent 50%),
-          radial-gradient(circle at 80% 20%, rgba(168,85,247,0.12) 0%, transparent 50%),
-          radial-gradient(circle at 40% 80%, rgba(34,197,94,0.08) 0%, transparent 50%);
-        animation: floatingOrbs 20s ease-in-out infinite;
-        z-index:1;
-    }
-    .main::after {
-        background: url('data:image/svg+xml,<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><g fill="%233b82f6" fill-opacity="0.08"><circle cx="5" cy="5" r="1"/><circle cx="20" cy="5" r="1"/><circle cx="35" cy="5" r="1"/><circle cx="5" cy="20" r="1"/><circle cx="20" cy="20" r="1"/><circle cx="35" cy="20" r="1"/><circle cx="5" cy="35" r="1"/><circle cx="20" cy="35" r="1"/><circle cx="35" cy="35" r="1"/></g></svg>');
-        opacity:.28; animation: gridMove 24s linear infinite; z-index:1;
-    }
+/* Card */
+.card{
+  background:linear-gradient(180deg, rgba(14,20,40,.9), rgba(12,18,34,.9));
+  border:1px solid rgba(122,162,255,.20); border-radius:18px; padding:18px; box-shadow:
+  0 8px 28px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.03);
+}
 
-    @keyframes gradientShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
-    @keyframes floatingOrbs { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-24px) scale(1.15)} 66%{transform:translate(-22px,18px) scale(.92)} }
-    @keyframes gridMove { 0%{transform:translate(0,0)} 100%{transform:translate(40px,40px)} }
+/* Neon glow categories */
+.card.opportunity{ border-color: rgba(52,211,153,.45); box-shadow:0 0 24px rgba(52,211,153,.16); }
+.card.threat{ border-color: rgba(239,68,68,.45); box-shadow:0 0 24px rgba(239,68,68,.16); }
+.card.trend{ border-color: rgba(167,139,250,.45); box-shadow:0 0 24px rgba(167,139,250,.16); }
 
-    .premium-header {
-        background: rgba(15,23,42,0.85);
-        border: 2px solid rgba(59,130,246,0.35);
-        border-radius: 24px; padding: 28px; margin-bottom: 24px; position:relative;
-        backdrop-filter: blur(20px);
-        box-shadow: 0 20px 40px rgba(0,0,0,.35), 0 0 60px rgba(59,130,246,.08);
-        overflow: hidden;
-    }
-    .premium-header::before {
-        content:""; position:absolute; left:0; right:0; top:0; height:2px;
-        background: linear-gradient(90deg, transparent, #3b82f6, #a855f7, transparent);
-        animation: shimmer 3.2s ease-in-out infinite;
-    }
-    @keyframes shimmer { 0%,100%{opacity:.3} 50%{opacity:1} }
+/* Badges */
+.badge{padding:4px 10px;border-radius:999px;font-size:.78rem;font-weight:700;letter-spacing:.2px}
+.b-green{background:rgba(52,211,153,.18); color:#8bffd0; border:1px solid rgba(52,211,153,.35)}
+.b-red{background:rgba(239,68,68,.18); color:#ffb0b0; border:1px solid rgba(239,68,68,.35)}
+.b-violet{background:rgba(167,139,250,.18); color:#d7c9ff; border:1px solid rgba(167,139,250,.35)}
+.b-blue{background:rgba(122,162,255,.20); color:#cfe0ff; border:1px solid rgba(122,162,255,.38)}
 
-    .title-gradient { 
-        background: linear-gradient(135deg, #60A5FA 0%, #A78BFA 50%, #22D3EE 100%);
-        -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
-        font-size: 3.2rem; font-weight: 800; line-height: 1.05; margin:0;
-        text-shadow: 0 0 30px rgba(96,165,250,.25);
-    }
-    .subtitle-glow { color:#cbd5e1; font-size:1.15rem; margin:8px 0 0 0; }
+/* Thought item (Framer-like) */
+.thought{
+  border-left:4px solid #7aa2ff; background:rgba(122,162,255,.08);
+  border-radius:14px; padding:12px 14px; margin:10px 0;
+  animation:slideIn .45s cubic-bezier(.175,.885,.32,1.275);
+}
+@keyframes slideIn{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
 
-    .premium-card {
-        background: rgba(15,23,42,0.78);
-        border: 2px solid rgba(59,130,246,0.22);
-        border-radius: 20px; padding: 24px; margin: 16px 0; position: relative;
-        backdrop-filter: blur(18px);
-        box-shadow: 0 18px 48px rgba(0,0,0,.45), 0 0 40px rgba(59,130,246,.05);
-        transition: transform .28s ease, border-color .28s ease;
-    }
-    .premium-card:hover { transform: translateY(-4px); border-color: rgba(59,130,246,0.4); }
+/* Buttons */
+.btn{border:none;border-radius:12px;padding:10px 16px;font-weight:800;color:#071225;
+  background:linear-gradient(90deg,#7aa2ff,#22d3ee); box-shadow:0 10px 30px rgba(124,181,255,.3)}
+.btn:active{transform:translateY(1px)}
 
-    .agent-avatar{
-        width:120px;height:120px;border-radius:50%;
-        background: linear-gradient(135deg, #3b82f6, #8b5cf6, #06b6d4);
-        display:flex;align-items:center;justify-content:center;margin: 0 auto 10px; position:relative;
-        box-shadow: 0 20px 40px rgba(59,130,246,.5); border:3px solid rgba(255,255,255,.18);
-    }
-    .agent-avatar.active { animation: agentPulse 2.2s ease-in-out infinite; }
-    @keyframes agentPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+.metric{ text-align:center; border:1px solid rgba(122,162,255,.25); border-radius:14px; padding:12px }
+.metric .k{font-size:22px;font-weight:900}
 
-    .status-dot{ width:22px;height:22px;border-radius:50%; position:absolute; bottom:8px; right: calc(50% - 11px);
-        border:3px solid rgba(15,23,42,.9); box-shadow: 0 0 16px currentColor; }
-    .status-dot.idle{ background:#64748b; color:#64748b; }
-    .status-dot.thinking{ background:#f59e0b; color:#f59e0b; animation: blink 1.3s ease-in-out infinite; }
-    .status-dot.analyzing{ background:#3b82f6; color:#3b82f6; animation: blink 1s ease-in-out infinite; }
-    .status-dot.completed{ background:#22c55e; color:#22c55e; }
-    @keyframes blink{ 0%,100%{opacity:1; transform:scale(1)} 50%{opacity:.75; transform:scale(1.12)} }
-
-    .thought-bubble {
-        background: rgba(59,130,246,0.15);
-        border: 2px solid rgba(59,130,246,0.3);
-        border-left: 5px solid #3b82f6; border-radius: 16px; padding: 18px; margin: 14px 0;
-        backdrop-filter: blur(10px); box-shadow: 0 10px 26px rgba(59,130,246,.1);
-        animation: slideIn .55s cubic-bezier(.175,.885,.32,1.275);
-    }
-    @keyframes slideIn { 0%{opacity:0; transform: translateX(-24px);} 100%{opacity:1; transform: translateX(0);} }
-
-    .metric-premium{
-        background: rgba(15, 23, 42, 0.85);
-        border: 2px solid rgba(59,130,246,0.22);
-        border-radius: 16px; padding: 18px; margin: 8px 0; text-align:center;
-    }
-
-    .progress-premium{ background: rgba(15,23,42,.86); border:2px solid rgba(59,130,246,.24);
-        border-radius:18px; padding:6px; margin:16px 0; }
-    .progress-fill{ height:14px; border-radius:12px;
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
-        box-shadow: 0 0 24px rgba(59,130,246,.65); transition: width .45s ease; }
-
-    .insight-card{ background: rgba(15,23,42,.9); border-radius: 18px; padding: 18px; margin: 12px 0; }
-    .insight-card.opportunity{ border:2px solid rgba(34,197,94,.4); box-shadow:0 8px 28px rgba(34,197,94,.15); }
-    .insight-card.threat{ border:2px solid rgba(239,68,68,.4); box-shadow:0 8px 28px rgba(239,68,68,.15); }
-    .insight-card.trend{ border:2px solid rgba(168,85,247,.4); box-shadow:0 8px 28px rgba(168,85,247,.15); }
-
-    .footer-premium{
-        background: rgba(15,23,42,.95); border-top: 2px solid rgba(59,130,246,.22);
-        padding: 28px 0; margin-top: 36px; text-align:center; position:relative;
-    }
-    .footer-premium::before{ content:""; position:absolute; top:0; left:0; right:0; height:2px;
-        background: linear-gradient(90deg, transparent, #3b82f6, #8b5cf6, transparent);
-        animation: shimmer 4s ease-in-out infinite;
-    }
-
-    .stSelectbox > div > div {
-        background: rgba(15,23,42,.94) !important; border: 2px solid rgba(59,130,246,.5) !important;
-        border-radius: 12px !important; color: #e2e8f0 !important; font-weight: 500 !important;
-    }
-    .stButton > button{
-        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #06b6d4 100%) !important;
-        border:none !important; border-radius:16px !important; color:white !important; font-weight:700 !important;
-        padding: 12px 22px !important; box-shadow:0 12px 32px rgba(59,130,246,.42) !important; transition: all .25s ease !important;
-    }
-    .stButton > button:hover{ transform: translateY(-2px) scale(1.015) !important; }
+/* Light mode override */
+.light .hero,.light .card{ background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.92));
+  color:#0a0f1f; border-color: rgba(82,109,255,.28) }
+.light body,.light .main{ background:#f6f8ff; color:#0a0f1f }
+.light .thought{ background:rgba(122,162,255,.12)}
 </style>
 """, unsafe_allow_html=True)
 
-# ============== DATA MODELS ==============
+def apply_light_mode(is_light: bool):
+    if is_light:
+        st.markdown("<script>document.documentElement.classList.add('light')</script>", unsafe_allow_html=True)
+    else:
+        st.markdown("<script>document.documentElement.classList.remove('light')</script>", unsafe_allow_html=True)
+
+# ====== MODELS ======
 @dataclass
 class AgentThought:
     content: str
     timestamp: datetime
-    thought_type: str = "analysis"
-    confidence: float = 0.0
+    confidence: float
 
 @dataclass
 class MarketInsight:
@@ -161,602 +119,480 @@ class MarketInsight:
     description: str
     impact_score: float
     confidence: float
-    category: str  # "opportunity" | "threat" | "trend"
+    category: str  # opportunity | threat | trend
 
-# ============== AGENT CORE ==============
+# ====== AGENT ======
 class ARIAAgent:
-    def __init__(self, language: str = "fr"):
+    def __init__(self, language="fr"):
         self.language = language
-        self.status = "idle"  # idle | thinking | analyzing | completed
+        self.status = "idle"   # idle|thinking|analyzing|completed
         self.thoughts: List[AgentThought] = []
         self.current_analysis: Optional[Dict] = None
-        self.confidence_level: float = 0.0
-        self.neural_activity: int = 0
-        self.analysis_progress: float = 0.0
+        self.confidence_level = 0.0
+        self.neural_activity = 0
+        self.analysis_progress = 0.0
 
         self.translations = {
-            "fr": {
-                "agent_name": "ARIA",
-                "agent_desc": "Agent de Recherche & d'Intelligence Autonome",
-                "status_idle": "🤖 Agent en veille - Prêt à analyser",
-                "status_thinking": "🧠 Réflexion stratégique en cours...",
-                "status_analyzing": "⚡ Analyse multi-dimensionnelle active",
-                "status_completed": "✨ Mission accomplie - Insights générés",
-                "sectors": {
-                    "FinTech": "Technologies Financières",
-                    "AI": "Intelligence Artificielle",
-                    "SaaS": "Logiciels en Service",
-                    "E-commerce": "Commerce Électronique",
-                },
-                "thoughts": [
-                    "🔍 Initialisation des capteurs de marché...",
-                    "🧠 Activation des réseaux neuronaux sectoriels...",
-                    "📊 Ingestion de 1 247 sources en temps réel...",
-                    "⚡ Traitement par modèles de deep learning...",
-                    "🎯 Corrélation des signaux faibles détectés...",
-                    "📈 Modélisation prédictive des tendances...",
-                    "🔬 Analyse concurrentielle multi-axes...",
-                    "🤖 Génération d'insights actionnables...",
-                    "✨ Synthèse stratégique avec confiance élevée.",
-                ],
+            "fr":{
+                "name":"ARIA","desc":"Agent de Recherche & d'Intelligence Autonome",
+                "status_idle":"🤖 En veille — prêt à analyser",
+                "status_thinking":"🧠 Réflexion stratégique…",
+                "status_analyzing":"⚡ Analyse multi-dimensionnelle…",
+                "status_completed":"✨ Mission accomplie — insights générés",
+                "sectors":{"FinTech":"Technologies Financières","AI":"Intelligence Artificielle","Retail":"Distribution"},
+                "thoughts":[
+                    "Initialisation des capteurs de marché…",
+                    "Activation des réseaux neuronaux sectoriels…",
+                    "Ingestion de 1 247 sources en temps réel…",
+                    "Traitement par modèles de deep learning…",
+                    "Corrélation des signaux faibles détectés…",
+                    "Modélisation prédictive des tendances…",
+                    "Analyse concurrentielle multi-axes…",
+                    "Génération d’insights actionnables…",
+                    "Synthèse stratégique à haute confiance."
+                ]
             },
-            "en": {
-                "agent_name": "ARIA",
-                "agent_desc": "Autonomous Research & Intelligence Agent",
-                "status_idle": "🤖 Agent on standby - Ready to analyze",
-                "status_thinking": "🧠 Strategic thinking in progress...",
-                "status_analyzing": "⚡ Multi-dimensional analysis active",
-                "status_completed": "✨ Mission accomplished - Insights generated",
-                "sectors": {
-                    "FinTech": "Financial Technologies",
-                    "AI": "Artificial Intelligence",
-                    "SaaS": "Software as a Service",
-                    "E-commerce": "E-commerce",
-                },
-                "thoughts": [
-                    "🔍 Initializing advanced market sensors...",
-                    "🧠 Activating sector neural networks...",
-                    "📊 Ingesting 1,247 real-time sources...",
-                    "⚡ Processing via deep learning models...",
-                    "🎯 Correlating detected weak signals...",
-                    "📈 Predictive modeling of trends...",
-                    "🔬 Competitive analysis on multiple axes...",
-                    "🤖 Generating actionable insights...",
-                    "✨ Strategic synthesis with high confidence.",
-                ],
-            },
+            "en":{
+                "name":"ARIA","desc":"Autonomous Research & Intelligence Agent",
+                "status_idle":"🤖 Standby — ready to analyze",
+                "status_thinking":"🧠 Strategic thinking…",
+                "status_analyzing":"⚡ Multi-dimensional analysis…",
+                "status_completed":"✨ Mission accomplished — insights generated",
+                "sectors":{"FinTech":"Financial Technologies","AI":"Artificial Intelligence","Retail":"Retail"},
+                "thoughts":[
+                    "Initializing market sensors…","Activating sector neural nets…","Ingesting 1,247 live sources…",
+                    "Processing via deep learning…","Correlating weak signals…","Predictive trend modeling…",
+                    "Multi-axis competitive scan…","Generating actionable insights…","High-confidence synthesis."
+                ]
+            }
         }
 
-        # Données d'exemple (2 secteurs bien remplis)
         self.market_data = {
-            "FinTech": {
-                "fr": {
-                    "summary": (
-                        "La FinTech se transforme via les agents IA conversationnels, "
-                        "l’automatisation du risque, et l’intégration blockchain. Le cadre MiCA "
-                        "renforce la confiance et favorise les acteurs conformes."
-                    ),
-                    "insights": [
-                        MarketInsight("IA Conversationnelle Bancaire",
-                                      "Assistants IA pour KYC, support client et scoring temps réel.",
-                                      9.5, 91, "opportunity"),
-                        MarketInsight("DeFi Institutionnelle",
-                                      "Accès institutionnel aux produits tokenisés et paiements programmables.",
-                                      8.8, 87, "opportunity"),
-                        MarketInsight("Super-Apps",
-                                      "Vers des plateformes financières unifiées (paiement, crédit, épargne).",
-                                      8.2, 79, "trend"),
-                        MarketInsight("Durcissement Réglementaire",
-                                      "MiCA/AML créent des barrières mais aussi un avantage compétitif aux conformes.",
-                                      7.9, 94, "threat"),
+            "FinTech":{
+                "fr":{
+                    "summary":"La FinTech accélère via IA conversationnelle, risque automatisé et intégration blockchain. MiCA renforce la confiance et avantage les acteurs conformes.",
+                    "insights":[
+                        MarketInsight("IA Conversationnelle Bancaire","KYC, support client, scoring temps réel.",9.5,91,"opportunity"),
+                        MarketInsight("DeFi Institutionnelle","Produits tokenisés & paiements programmables.",8.8,87,"opportunity"),
+                        MarketInsight("Super-Apps","Plateformes unifiées (paiement, crédit, épargne).",8.2,79,"trend"),
+                        MarketInsight("Durcissement Réglementaire","MiCA/AML = barrières mais avantage aux conformes.",7.9,94,"threat"),
                     ],
-                    "recommendations": [
+                    "reco":[
                         "Investir dans l’IA conversationnelle avant T2 2025",
-                        "Anticiper la conformité MiCA 6–9 mois à l’avance",
+                        "Anticiper MiCA 6–9 mois à l’avance",
                         "Acquérir des talents blockchain avant la pénurie",
-                        "Concevoir une feuille de route Super-App progressive",
-                    ],
+                        "Feuille de route Super-App progressive"
+                    ]
                 },
-                "en": {
-                    "summary": (
-                        "FinTech is reshaped by conversational AI agents, risk automation, and "
-                        "blockchain integration. MiCA provides trust and advantages for compliant players."
-                    ),
-                    "insights": [
-                        MarketInsight("Conversational Banking AI",
-                                      "AI assistants for KYC, customer support, and real-time scoring.",
-                                      9.5, 91, "opportunity"),
-                        MarketInsight("Institutional DeFi",
-                                      "Institutional access to tokenized products and programmable payments.",
-                                      8.8, 87, "opportunity"),
-                        MarketInsight("Super-Apps",
-                                      "Consolidated financial platforms (payments, credit, savings).",
-                                      8.2, 79, "trend"),
-                        MarketInsight("Regulatory Tightening",
-                                      "MiCA/AML create barriers but reward compliance.",
-                                      7.9, 94, "threat"),
+                "en":{
+                    "summary":"FinTech is reshaped by conversational AI, risk automation and blockchain. MiCA boosts trust and rewards compliance.",
+                    "insights":[
+                        MarketInsight("Conversational Banking AI","KYC, support, real-time scoring.",9.5,91,"opportunity"),
+                        MarketInsight("Institutional DeFi","Tokenized assets & programmable payments.",8.8,87,"opportunity"),
+                        MarketInsight("Super-Apps","Unified platforms (payments, credit, savings).",8.2,79,"trend"),
+                        MarketInsight("Regulatory Tightening","MiCA/AML barriers but reward compliance.",7.9,94,"threat"),
                     ],
-                    "recommendations": [
+                    "reco":[
                         "Invest in conversational AI before Q2 2025",
-                        "Prepare MiCA compliance 6–9 months ahead",
+                        "Prepare MiCA 6–9 months ahead",
                         "Acquire blockchain talent before shortage",
-                        "Design a phased Super-App roadmap",
-                    ],
-                },
+                        "Phased Super-App roadmap"
+                    ]
+                }
             },
-            "AI": {
-                "fr": {
-                    "summary": (
-                        "L’IA connaît une croissance explosive portée par les agents autonomes, "
-                        "l’edge computing et l’intégration enterprise. Marché UE visé ~47 Md€ d’ici 2027."
-                    ),
-                    "insights": [
-                        MarketInsight("Agents IA Autonomes",
-                                      "Automatisation multi-process, copilotes métiers et orchestration d’outils.",
-                                      9.8, 96, "opportunity"),
-                        MarketInsight("IA Enterprise",
-                                      "ROI moyen 18 mois sur data quality, décision et productivité.",
-                                      9.4, 89, "opportunity"),
-                        MarketInsight("Edge AI Computing",
-                                      "Traitement proche de la source: latence, coûts et privacy optimisés.",
-                                      8.7, 83, "trend"),
-                        MarketInsight("Pénurie de Talents",
-                                      "Demande senior +423% et salaires en forte hausse.",
-                                      9.2, 94, "threat"),
+            "AI":{
+                "fr":{
+                    "summary":"Croissance explosive portée par agents autonomes, edge computing et intégration entreprise.",
+                    "insights":[
+                        MarketInsight("Agents IA Autonomes","Copilotes métiers & orchestration d’outils.",9.8,96,"opportunity"),
+                        MarketInsight("IA Enterprise","ROI moyen à 18 mois (productivité/décision).",9.4,89,"opportunity"),
+                        MarketInsight("Edge AI Computing","Traitement proche source (latence/coût/privacy).",8.7,83,"trend"),
+                        MarketInsight("Pénurie de Talents","Demande senior +423%.",9.2,94,"threat"),
                     ],
-                    "recommendations": [
-                        "Capitaliser sur la vague d’agents IA sectoriels",
-                        "Investir dans l’Edge AI pour anticiper la décentralisation",
-                        "Bâtir une expertise AI Act & gouvernance",
-                        "Acquérir des équipes IA avant l’explosion des coûts",
-                    ],
+                    "reco":[
+                        "Capitaliser agents IA sectoriels",
+                        "Investir dans l’Edge AI (décentralisation)",
+                        "Bâtir expertise AI Act & gouvernance",
+                        "Acquérir des équipes IA avant explosion des coûts"
+                    ]
                 },
-                "en": {
-                    "summary": (
-                        "AI is booming via autonomous agents, edge computing, and enterprise integration. "
-                        "EU market ≈ $52B by 2027."
-                    ),
-                    "insights": [
-                        MarketInsight("Autonomous AI Agents",
-                                      "Multi-process automation, domain copilots, tool orchestration.",
-                                      9.8, 96, "opportunity"),
-                        MarketInsight("Enterprise AI",
-                                      "18-month average ROI across data quality, decisioning, productivity.",
-                                      9.4, 89, "opportunity"),
-                        MarketInsight("Edge AI Computing",
-                                      "Near-source processing: latency, cost, and privacy gains.",
-                                      8.7, 83, "trend"),
-                        MarketInsight("Talent Shortage",
-                                      "Senior demand +423% and rising compensation.",
-                                      9.2, 94, "threat"),
+                "en":{
+                    "summary":"Autonomous agents, edge computing and enterprise integration drive explosive growth.",
+                    "insights":[
+                        MarketInsight("Autonomous AI Agents","Domain copilots & tool orchestration.",9.8,96,"opportunity"),
+                        MarketInsight("Enterprise AI","18-month ROI across quality/productivity.",9.4,89,"opportunity"),
+                        MarketInsight("Edge AI Computing","Near-source processing gains.",8.7,83,"trend"),
+                        MarketInsight("Talent Shortage","+423% senior demand.",9.2,94,"threat"),
                     ],
-                    "recommendations": [
+                    "reco":[
+                        "Capitalize on sector AI agents",
                         "Invest in edge AI for decentralization",
                         "Build AI Act compliance expertise",
-                        "Acquire AI teams before cost explosion",
-                        "Launch sector-specific autonomous agents",
-                    ],
-                },
+                        "Acquire AI teams before cost explosion"
+                    ]
+                }
             },
-        }
-
-    def get_translation(self, key: str) -> str:
-        return self.translations.get(self.language, {}).get(key, key)
-
-    async def activate(self, sector: str) -> None:
-        self.status = "thinking"
-        self.thoughts = []
-        self.analysis_progress = 0.0
-        self.neural_activity = random.randint(820, 1220)
-
-        thoughts = self.translations[self.language]["thoughts"]
-
-        for i, text in enumerate(thoughts):
-            await asyncio.sleep(random.uniform(0.55, 1.2))
-            self.thoughts.append(
-                AgentThought(
-                    content=text,
-                    timestamp=datetime.now(),
-                    confidence=random.uniform(0.86, 0.97),
-                )
-            )
-            self.analysis_progress = ((i + 1) / len(thoughts)) * 100
-            if i == 3:
-                self.status = "analyzing"
-            if i == len(thoughts) - 1:
-                self.status = "completed"
-                self.current_analysis = self.market_data.get(sector, {}).get(self.language, {})
-                self.confidence_level = float(random.uniform(88.0, 97.0))
-            self.neural_activity += random.randint(-45, 85)
-
-    def gauge(self) -> go.Figure:
-        fig = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=max(0.0, float(self.confidence_level)),
-            title={'text': "Confidence Level", 'font': {'size': 20, 'color': '#e2e8f0'}},
-            number={'font': {'size': 36, 'color': '#60a5fa'}},
-            gauge={
-                'axis': {'range': [0, 100], 'tickcolor': '#94a3b8'},
-                'bar': {'color': "#3b82f6", 'thickness': 0.82},
-                'steps': [
-                    {'range': [0, 60], 'color': "rgba(239, 68, 68, 0.30)"},
-                    {'range': [60, 85], 'color': "rgba(245, 158, 11, 0.30)"},
-                    {'range': [85, 100], 'color': "rgba(34, 197, 94, 0.30)"},
-                ],
-                'threshold': {
-                    'line': {'color': "#a855f7", 'width': 6},
-                    'thickness': 0.85,
-                    'value': 90
+            "Retail":{
+                "fr":{
+                    "summary":"Retail : demand-sensing IA, pricing dynamique et orchestration omnicanale.",
+                    "insights":[
+                        MarketInsight("Demand Sensing IA","Prévision J+7/J+14 multi-signaux.",9.3,90,"opportunity"),
+                        MarketInsight("Dynamic Pricing","+2–4 pts de marge sur familles sensibles.",8.7,85,"opportunity"),
+                        MarketInsight("Orchestration Omnicanale","Click&Collect/Ship-from-store → NPS↑ délais↓.",8.1,78,"trend"),
+                        MarketInsight("Pression Logistique","Volatilité transport/énergie → simuler coûts.",8.5,88,"threat"),
+                    ],
+                    "reco":[
+                        "Pilote demand-sensing sur 3 familles top-SKU",
+                        "Dynamic pricing sur 10% de l’assortiment",
+                        "Optimiser Ship-from-store dans 5 magasins",
+                        "Jumeau logistique pour scénarios de coûts"
+                    ]
+                },
+                "en":{
+                    "summary":"Retail: AI demand sensing, dynamic pricing, omnichannel orchestration.",
+                    "insights":[
+                        MarketInsight("AI Demand Sensing","J+7/J+14 multi-signal forecasting.",9.3,90,"opportunity"),
+                        MarketInsight("Dynamic Pricing","+2–4 margin pts on sensitive cats.",8.7,85,"opportunity"),
+                        MarketInsight("Omnichannel Orchestration","Click&Collect/Ship-from-store → NPS↑.",8.1,78,"trend"),
+                        MarketInsight("Logistics Pressure","Volatile costs → scenario simulation.",8.5,88,"threat"),
+                    ],
+                    "reco":[
+                        "Pilot demand sensing on 3 top-SKU families",
+                        "Enable dynamic pricing on top 10%",
+                        "Optimize Ship-from-store in 5 stores",
+                        "Build a logistics digital twin"
+                    ]
                 }
             }
-        ))
-        fig.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font={'color': "#e2e8f0"}, height=340, margin=dict(l=20, r=20, t=60, b=10)
-        )
-        return fig
+        }
 
-# ============== APP LOGIC ==============
-def main():
-    # State init
-    if "agent" not in st.session_state:
-        st.session_state.agent = ARIAAgent(language="fr")
-    if "language" not in st.session_state:
-        st.session_state.language = "fr"
+    def t(self,key): return self.translations[self.language].get(key,key)
 
-    agent: ARIAAgent = st.session_state.agent
-    agent.language = st.session_state.language
+    async def activate(self, sector:str):
+        self.status="thinking"; self.thoughts=[]; self.analysis_progress=0.0
+        self.neural_activity = random.randint(780, 1180)
+        for i,txt in enumerate(self.translations[self.language]["thoughts"]):
+            await asyncio.sleep(random.uniform(.35,.75))
+            # Option LLM : si OPENAI_API_KEY présent, on enrichit la pensée
+            content = await maybe_llm_thought(txt, self.language, sector)
+            self.thoughts.append(AgentThought(content, datetime.now(), random.uniform(.86,.97)))
+            self.analysis_progress = (i+1)/len(self.translations[self.language]["thoughts"])*100
+            if i==3: self.status="analyzing"
+        self.status="completed"
+        self.current_analysis = self.market_data.get(sector,{}).get(self.language,{})
+        self.confidence_level = float(random.uniform(88.0, 97.0))
+        self.neural_activity += random.randint(-30, 70)
 
-    # HEADER
+# ====== (Optionnel) LLM – génère des pensées uniques si OPENAI_API_KEY défini ======
+async def maybe_llm_thought(base:str, lang:str, sector:str)->str:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:  # fallback sans LLM
+        return base
+    try:
+        # Lazy import pour éviter l’erreur si non installé
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key)
+        prompt = (f"Lang={lang}. You are ARIA, an autonomous market agent. Expand this thought (1 sentence) "
+                  f"about sector {sector}, with a concrete angle and metric if relevant. Thought: {base}")
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role":"system","content":"You are ARIA – concise, technical, insightful."},
+                      {"role":"user","content":prompt}],
+            max_tokens=50, temperature=0.7)
+        return resp.choices[0].message.content.strip()
+    except Exception:
+        return base
+
+# ====== UI HELPERS ======
+def gauge(value: float)->go.Figure:
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=max(0.0, float(value)),
+        number={'font':{'size':38,'color':'#cfe0ff'}},
+        title={'text':"Confidence","font":{'size':18,'color':'#cfe0ff'}},
+        gauge={
+            'axis':{'range':[0,100],'tickcolor':'#7aa2ff'},
+            'bar':{'color':"#7aa2ff",'thickness':0.78},
+            'steps':[
+                {'range':[0,60],'color':'rgba(239,68,68,.25)'},
+                {'range':[60,85],'color':'rgba(245,158,11,.25)'},
+                {'range':[85,100],'color':'rgba(52,211,153,.25)'}
+            ],
+            'threshold':{'line':{'color':'#a78bfa','width':5},'value':90}
+        }
+    ))
+    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
+                      height=320, margin=dict(l=15,r=15,t=40,b=10), font={'color':'#e6edf7'})
+    return fig
+
+def live_neural_chart(series: List[int])->go.Figure:
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(y=series, mode="lines+markers", line={'shape':'spline'}))
+    fig.update_layout(
+        height=220, margin=dict(l=10,r=10,t=20,b=10),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(12,18,34,.6)",
+        font={'color':'#cfe0ff'}, xaxis={'visible':False}, yaxis={'gridcolor':'rgba(122,162,255,.2)'}
+    )
+    return fig
+
+# ====== STATE INIT ======
+if "agent" not in st.session_state: st.session_state.agent = ARIAAgent("fr")
+if "language" not in st.session_state: st.session_state.language = "fr"
+if "neural_series" not in st.session_state: st.session_state.neural_series = [800, 820, 790, 860, 910]
+if "chat" not in st.session_state: st.session_state.chat = []
+
+agent: ARIAAgent = st.session_state.agent
+agent.language = st.session_state.language
+
+# ====== HEADER ======
+with st.container():
     st.markdown(f"""
-    <div class='premium-header'>
-        <div style='display:flex;gap:24px;align-items:flex-start;justify-content:space-between;'>
-            <div style='flex:1;'>
-                <h1 class='title-gradient'>🧠 {agent.get_translation('agent_name')}</h1>
-                <p class='subtitle-glow'>{agent.get_translation('agent_desc')}</p>
-                <div style='display:flex;gap:18px;margin-top:14px;font-size:.95rem;color:#60a5fa;'>
-                    <span>🧠 Neural Activity: {agent.neural_activity}</span>
-                    <span>📚 Sources: 1,247</span>
-                    <span>⚡ Real-time Analysis</span>
-                </div>
-            </div>
+    <div class="hero">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:44px;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.12);
+             display:flex;align-items:center;justify-content:center;background:linear-gradient(120deg,#7aa2ff,#a78bfa);">🤖</div>
+        <div style="flex:1 1 auto;">
+          <h1 class="title">{agent.t('name')} • {agent.t('desc')}</h1>
+          <p class="sub">🧠 Neural: {agent.neural_activity} &nbsp;&nbsp;|&nbsp;&nbsp; 📚 Sources: 1,247 &nbsp;&nbsp;|&nbsp;&nbsp; ⚡ Real-time</p>
         </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <!-- Dark/Light toggle rendered below -->
+        </div>
+      </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # Language & Sector
-    col_lang, col_spacer, col_sector = st.columns([1, .2, 2])
-    with col_lang:
-        lang = st.selectbox("🌐 Language / Langue", ["🇫🇷 Français", "🇺🇸 English"])
-        new_language = "fr" if "Français" in lang else "en"
-        if new_language != st.session_state.language:
-            st.session_state.language = new_language
-            st.rerun()
-
+# Top controls
+colA, colB, colC, colD = st.columns([1.1, 1.2, .9, 1.1])
+with colA:
+    lang = st.selectbox("🌐 Language / Langue", ["🇫🇷 Français","🇺🇸 English"])
+    new_lang = "fr" if "Français" in lang else "en"
+    if new_lang != st.session_state.language:
+        st.session_state.language = new_lang
+        st.rerun()
+with colB:
     sectors = agent.translations[agent.language]["sectors"]
-    with col_sector:
-        selected_sector = st.selectbox(
-            "🎯 Sector",
-            list(sectors.keys()),
-            format_func=lambda k: sectors[k],
-        )
+    sector = st.selectbox("🎯 Sector", list(sectors.keys()), format_func=lambda k: sectors[k])
+with colC:
+    light = st.toggle("🌗 Light mode", value=False)
+    apply_light_mode(light)
+with colD:
+    autonomous = st.toggle("🤖 Autonomous (every 5 min)", value=st.session_state.get(AUTONOMY_KEY, False))
+    st.session_state[AUTONOMY_KEY] = autonomous
 
-    # LAYOUT
-    left, right = st.columns([1, 2])
+# Autorefresh for live chart & autonomy
+if autonomous:
+    st.experimental_set_query_params(_=str(datetime.now().timestamp()))  # avoid caching
+    st.autorefresh(interval=5_000, key="autorefresh")  # 5s refresh for demo
+    # Optionally relaunch analysis every 5 minutes:
+    last = st.session_state.get("last_run")
+    if (not last) or (datetime.now() - last > timedelta(minutes=5)):
+        asyncio.run(agent.activate(sector))
+        st.session_state.last_run = datetime.now()
 
-    # LEFT – Control Panel & Metrics
-    with left:
-        st.markdown("""
-        <div class='premium-card' style='text-align:center;'>
-            <div class='agent-avatar {active}'><span style='font-size:2.4rem;'>🤖</span></div>
-            <div class='status-dot {status}'></div>
-            <h4 style='margin:6px 0 2px 0;'>ARIA</h4>
-            <p style='color:#94a3b8;margin:0;'>Autonomous Intelligence System</p>
-        </div>
-        """.format(active=("active" if agent.status != "idle" else ""), status=agent.status), unsafe_allow_html=True)
+# ====== LAYOUT ======
+left, right = st.columns([1,2], vertical_alignment="top")
 
-        # Status text
+# LEFT — Control, Metrics, Live Neural
+with left:
+    st.markdown(f"""
+    <div class="card" style="text-align:center">
+      <div style="font-size:42px;margin-bottom:8px">🧠</div>
+      <div class="badge b-blue">{agent.t('status_'+agent.status)}</div>
+      <div style="height:8px"></div>
+      <div style="border:1px solid var(--ring);border-radius:12px;overflow:hidden">
+        <div style="height:12px;width:{agent.analysis_progress:.1f}%;background:linear-gradient(90deg,#7aa2ff,#22d3ee)"></div>
+      </div>
+      <div style="margin-top:6px;color:var(--muted)">Progress: {agent.analysis_progress:.1f}%</div>
+      <div style="height:10px"></div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <form action="#" method="get"></form>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    c1, c2 = st.columns(2)
+    with c1:
+        if agent.status in ("idle","completed"):
+            if st.button("🚀 Activate ARIA", use_container_width=True):
+                asyncio.run(agent.activate(sector)); st.rerun()
+        else:
+            if st.button("⏹️ Stop", use_container_width=True):
+                agent.status="idle"; agent.thoughts=[]; agent.current_analysis=None
+                agent.analysis_progress=0; agent.confidence_level=0; st.rerun()
+    with c2:
+        if st.button("🔄 Reset", use_container_width=True):
+            agent.status="idle"; agent.thoughts=[]; agent.current_analysis=None
+            agent.analysis_progress=0; agent.confidence_level=0; st.rerun()
+
+    st.markdown("#### 📊 Real-time Metrics")
+    mcol1, mcol2 = st.columns(2)
+    with mcol1:
+        st.markdown(f"""<div class="metric"><div>Neural Activity</div><div class="k">{agent.neural_activity}</div></div>""", unsafe_allow_html=True)
+    with mcol2:
+        conf_txt = f"{agent.confidence_level:.1f}%" if agent.confidence_level>0 else "—"
+        st.markdown(f"""<div class="metric"><div>Confidence</div><div class="k">{conf_txt}</div></div>""", unsafe_allow_html=True)
+
+    # Live neural series (demo)
+    new_point = max(700, min(1250, (st.session_state.neural_series[-1] + random.randint(-40, 50))))
+    st.session_state.neural_series.append(new_point)
+    st.plotly_chart(live_neural_chart(st.session_state.neural_series[-30:]), use_container_width=True)
+
+# RIGHT — Thought process, Summary, Gauge, Insights, Recos, Chat & Export
+with right:
+    # Thoughts
+    if agent.status != "idle" and agent.thoughts:
+        st.markdown('<div class="card"><h3>🧠 Agent Thought Process</h3></div>', unsafe_allow_html=True)
+        for th in agent.thoughts:
+            st.markdown(f"""
+            <div class="thought">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>{th.content}</div>
+                <div class="badge b-green">{th.confidence:.1%}</div>
+              </div>
+              <div style="color:var(--muted);font-size:.85rem;margin-top:4px">{th.timestamp.strftime("%H:%M:%S")}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # Results
+    if agent.current_analysis and agent.status == "completed":
         st.markdown(f"""
-        <div class='premium-card' style='text-align:center; padding:16px;'>
-            <p style='margin:0; font-weight:600; color:#e2e8f0;'>{agent.get_translation(f"status_{agent.status}")}</p>
+        <div class="card">
+          <h3>📋 Executive Summary <span class="badge b-green" style="margin-left:6px">High confidence</span></h3>
+          <div style="border:1px solid var(--ring);border-radius:14px;padding:14px;margin-top:6px;background:rgba(122,162,255,.08)">
+            {agent.current_analysis.get("summary","")}
+          </div>
         </div>
         """, unsafe_allow_html=True)
 
-        # Progress
-        if agent.status != "idle":
-            st.markdown(f"""
-            <div class='progress-premium'>
-                <div class='progress-fill' style='width:{agent.analysis_progress:.1f}%'></div>
-            </div>
-            <p style='text-align:center; color:#cbd5e1; font-size:.92rem;'>
-                Analysis Progress: {agent.analysis_progress:.1f}%
-            </p>
-            """, unsafe_allow_html=True)
+        st.markdown('<div class="card"><h3 style="text-align:center">📈 Analysis Confidence</h3></div>', unsafe_allow_html=True)
+        st.plotly_chart(gauge(agent.confidence_level), use_container_width=True)
 
-        # Buttons
-        c1, c2 = st.columns(2)
-        with c1:
-            if agent.status in ("idle", "completed"):
-                if st.button("🚀 Activate ARIA Agent"):
-                    with st.spinner("🤖 Initializing autonomous analysis..."):
-                        asyncio.run(agent.activate(selected_sector))
-                        st.rerun()
-            else:
-                if st.button("⏹️ Stop Agent"):
-                    agent.status = "idle"
-                    agent.thoughts = []
-                    agent.current_analysis = None
-                    agent.analysis_progress = 0.0
-                    agent.confidence_level = 0.0
-                    st.rerun()
-        with c2:
-            if st.button("🔄 Reset"):
-                agent.status = "idle"
-                agent.thoughts = []
-                agent.current_analysis = None
-                agent.analysis_progress = 0.0
-                agent.confidence_level = 0.0
-                st.rerun()
-
-        # Live Metrics
-        if agent.status != "idle":
-            st.markdown("<h4 style='margin:12px 0;'>📊 Real-time Metrics</h4>", unsafe_allow_html=True)
-            metrics = [
-                ("Neural Activity", f"{agent.neural_activity}", "🧠"),
-                ("Data Sources", "1,247", "📚"),
-                ("Insights Generated", f"{len([t for t in agent.thoughts if t.confidence>0.85])}", "💡"),
-                ("Confidence Level", f"{agent.confidence_level:.1f}%" if agent.confidence_level > 0 else "N/A", "⚡"),
-            ]
-            for label, value, icon in metrics:
-                st.markdown(f"""
-                <div class='metric-premium'>
-                    <div style='display:flex;justify-content:space-between;align-items:center;'>
-                        <span style='color:#94a3b8;font-size:.9rem;'>{label}</span>
-                        <span style='font-size:1.2rem'>{icon}</span>
-                    </div>
-                    <p style='margin:6px 0 0 0; font-size:1.35rem; font-weight:800;'>{value}</p>
-                </div>
-                """, unsafe_allow_html=True)
-
-    # RIGHT – Thoughts, Results
-    with right:
-        # Thought process
-        if agent.status != "idle" and agent.thoughts:
-            st.markdown("""
-            <div class='premium-card'>
-                <h3 style='margin:0 0 12px 0; display:flex; align-items:center; gap:10px;'>
-                    🧠 Agent Thought Process
-                    <span style='margin-left:auto; display:flex; gap:6px;'>
-                        <i style='width:8px;height:8px;border-radius:50%;background:#22c55e;animation: blink 1s infinite;'></i>
-                        <i style='width:8px;height:8px;border-radius:50%;background:#3b82f6;animation: blink 1.2s infinite;'></i>
-                        <i style='width:8px;height:8px;border-radius:50%;background:#a855f7;animation: blink 1.4s infinite;'></i>
-                    </span>
-                </h3>
-            </div>
-            """, unsafe_allow_html=True)
-
-            for i, t in enumerate(agent.thoughts):
-                st.markdown(f"""
-                <div class='thought-bubble' style='animation-delay:{i*0.08}s'>
-                    <div style='display:flex; gap:12px; align-items:flex-start;'>
-                        <div style='background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;flex-shrink:0;'>
-                            🤖
-                        </div>
-                        <div style='flex:1;'>
-                            <p style='margin:0 0 8px 0;'>{t.content}</p>
-                            <div style='display:flex;justify-content:space-between;color:#94a3b8;font-size:.85rem;'>
-                                <span>{t.timestamp.strftime("%H:%M:%S")}</span>
-                                <span style='color:#22c55e;background:rgba(34,197,94,.15);padding:2px 8px;border-radius:10px;'>
-                                    {t.confidence:.1%} confidence
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-        # Results
-        if agent.current_analysis and agent.status == "completed":
-            st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
-            # Executive Summary
-            st.markdown(f"""
-            <div class='premium-card'>
-              <h3 style='margin:0 0 14px 0; display:flex; align-items:center; gap:10px;'>
-                📋 Executive Summary
-                <span style='margin-left:auto;background:rgba(34,197,94,.16);color:#22c55e;padding:4px 10px;border-radius:16px;font-size:.8rem;'>High Confidence</span>
-              </h3>
-              <div style='background:linear-gradient(135deg,rgba(59,130,246,.19),rgba(168,85,247,.18)); border:1px solid rgba(59,130,246,.35); border-left:5px solid #3b82f6; border-radius:14px; padding:18px;'>
-                <p style='margin:0; line-height:1.6;'>{agent.current_analysis.get("summary","")}</p>
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            # Confidence Gauge
-            st.markdown("<div class='premium-card'><h3 style='text-align:center;margin:0 0 10px 0;'>📊 Analysis Confidence</h3></div>", unsafe_allow_html=True)
-            st.plotly_chart(agent.gauge(), use_container_width=True)
-
-            # Insights
-            insights: List[MarketInsight] = agent.current_analysis.get("insights") or []
-            if insights:
-                st.markdown("<div class='premium-card'><h3 style='margin:0 0 12px 0;'>🎯 Strategic Insights</h3></div>", unsafe_allow_html=True)
-                categories = {
-                    "opportunity": [i for i in insights if i.category == "opportunity"],
-                    "threat": [i for i in insights if i.category == "threat"],
-                    "trend": [i for i in insights if i.category == "trend"],
-                }
-                if categories["opportunity"]:
-                    st.markdown("<h4 style='color:#22c55e; margin:10px 0;'>💡 Market Opportunities</h4>", unsafe_allow_html=True)
-                    for opp in categories["opportunity"]:
-                        st.markdown(f"""
-                        <div class='insight-card opportunity'>
-                            <h5 style='margin:0 0 8px 0;'>{opp.title}</h5>
-                            <p style='margin:0 0 10px 0; color:#cbd5e1;'>{opp.description}</p>
-                            <div style='display:flex;justify-content:space-between;'>
-                                <div style='color:#94a3b8; font-size:.9rem;'>
-                                    Impact: <b style='color:#22c55e;'>{opp.impact_score}/10</b> &nbsp;|&nbsp;
-                                    Confidence: <b style='color:#22c55e;'>{opp.confidence}%</b>
-                                </div>
-                                <span style='background:rgba(34,197,94,.16);color:#22c55e;padding:3px 10px;border-radius:14px;font-size:.8rem;'>High Priority</span>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                if categories["threat"]:
-                    st.markdown("<h4 style='color:#ef4444; margin:10px 0;'>⚠️ Strategic Threats</h4>", unsafe_allow_html=True)
-                    for th in categories["threat"]:
-                        st.markdown(f"""
-                        <div class='insight-card threat'>
-                            <h5 style='margin:0 0 8px 0;'>{th.title}</h5>
-                            <p style='margin:0 0 10px 0; color:#cbd5e1;'>{th.description}</p>
-                            <div style='display:flex;justify-content:space-between;'>
-                                <div style='color:#94a3b8; font-size:.9rem;'>
-                                    Impact: <b style='color:#ef4444;'>{th.impact_score}/10</b> &nbsp;|&nbsp;
-                                    Confidence: <b style='color:#ef4444;'>{th.confidence}%</b>
-                                </div>
-                                <span style='background:rgba(239,68,68,.16);color:#ef4444;padding:3px 10px;border-radius:14px;font-size:.8rem;'>Monitor</span>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                if categories["trend"]:
-                    st.markdown("<h4 style='color:#a855f7; margin:10px 0;'>📈 Emerging Trends</h4>", unsafe_allow_html=True)
-                    for tr in categories["trend"]:
-                        st.markdown(f"""
-                        <div class='insight-card trend'>
-                            <h5 style='margin:0 0 8px 0;'>{tr.title}</h5>
-                            <p style='margin:0 0 10px 0; color:#cbd5e1;'>{tr.description}</p>
-                            <div style='display:flex;justify-content:space-between;'>
-                                <div style='color:#94a3b8; font-size:.9rem;'>
-                                    Impact: <b style='color:#a855f7;'>{tr.impact_score}/10</b> &nbsp;|&nbsp;
-                                    Confidence: <b style='color:#a855f7;'>{tr.confidence}%</b>
-                                </div>
-                                <span style='background:rgba(168,85,247,.16);color:#a855f7;padding:3px 10px;border-radius:14px;font-size:.8rem;'>Track</span>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-
-            # Recommendations
-            recos: List[str] = agent.current_analysis.get("recommendations") or []
-            if recos:
-                st.markdown("""
-                <div class='premium-card'>
-                    <h3 style='margin:0 0 12px 0; display:flex; align-items:center; gap:10px;'>
-                        🧭 AI Strategic Recommendations
-                        <span style='margin-left:auto;background:rgba(168,85,247,.16);color:#a78bfa;padding:4px 10px;border-radius:16px;font-size:.8rem;'>Actionable</span>
-                    </h3>
-                </div>
-                """, unsafe_allow_html=True)
-                for i, rec in enumerate(recos, 1):
+        insights: List[MarketInsight] = agent.current_analysis.get("insights") or []
+        if insights:
+            st.markdown('<div class="card"><h3>🎯 Strategic Insights</h3></div>', unsafe_allow_html=True)
+            def render(cat, label, bclass):
+                st.markdown(f'<h4 style="margin:.4rem 0">{label}</h4>', unsafe_allow_html=True)
+                for ins in [i for i in insights if i.category==cat]:
                     st.markdown(f"""
-                    <div style='display:flex; gap:14px; background:rgba(168,85,247,.14); border:1px solid rgba(168,85,247,.28); border-radius:16px; padding:16px; margin:10px 0;'>
-                        <div style='background:linear-gradient(135deg,#3b82f6,#8b5cf6); width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;'>
-                            <b>{i}</b>
-                        </div>
-                        <div style='flex:1;'>
-                            <p style='margin:0;'>{rec}</p>
-                            <div style='margin-top:8px; display:flex; gap:8px;'>
-                                <span style='background:rgba(34,197,94,.16);color:#22c55e;padding:2px 8px;border-radius:12px;font-size:.75rem;'>High Impact</span>
-                                <span style='background:rgba(59,130,246,.16);color:#60a5fa;padding:2px 8px;border-radius:12px;font-size:.75rem;'>Strategic</span>
-                            </div>
-                        </div>
+                    <div class="card {cat}">
+                      <div style="display:flex;justify-content:space-between;align-items:center">
+                        <h5 style="margin:.1rem 0">{ins.title}</h5>
+                        <span class="badge {bclass}">{'High' if ins.impact_score>=8.5 else 'Medium'}</span>
+                      </div>
+                      <div style="color:var(--muted)">{ins.description}</div>
+                      <div style="display:flex;gap:16px;margin-top:8px;color:#cfe0ff">
+                        <div>Impact: <b>{ins.impact_score}/10</b></div>
+                        <div>Confidence: <b>{ins.confidence}%</b></div>
+                      </div>
                     </div>
                     """, unsafe_allow_html=True)
+            render("opportunity","💡 Market Opportunities","b-green")
+            render("threat","⚠️ Strategic Threats","b-red")
+            render("trend","📈 Emerging Trends","b-violet")
 
-            # Export / Actions
-            st.markdown("<div class='premium-card'><h3 style='margin:0 0 12px 0;'>📤 Export & Actions</h3>", unsafe_allow_html=True)
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                if st.button("📄 Export Report (.txt)"):
-                    # Build report
-                    insights = agent.current_analysis.get("insights") or []
-                    report = [
-                        "🤖 ARIA - STRATEGIC INTELLIGENCE REPORT",
-                        "═══════════════════════════════════════════════",
-                        f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-                        f"Sector: {selected_sector}",
-                        f"Confidence Level: {agent.confidence_level:.1f}%",
-                        f"Neural Activity: {agent.neural_activity} nodes",
-                        "",
-                        "EXECUTIVE SUMMARY:",
-                        agent.current_analysis.get('summary', ''),
-                        "",
-                        "KEY STRATEGIC INSIGHTS:",
-                        "═══════════════════════════════════════════════",
-                    ]
-                    for ins in insights:
-                        report += [
-                            f"\n🎯 {ins.title.upper()}",
-                            f"   Category: {ins.category.title()}",
-                            f"   Impact Score: {ins.impact_score}/10",
-                            f"   Confidence: {ins.confidence}%",
-                            f"   Description: {ins.description}",
-                        ]
-                    report += ["", "AI STRATEGIC RECOMMENDATIONS:", "═══════════════════════════════════════════════"]
-                    for i, rec in enumerate(recos, 1):
-                        report.append(f"{i}. {rec}")
-                    report += [
-                        "", "═══════════════════════════════════════════════",
-                        f"Generated by ARIA • Confidence: {agent.confidence_level:.1f}% • Neural: {agent.neural_activity} nodes"
-                    ]
-                    st.download_button(
-                        label="⬇️ Download Report",
-                        data=("\n".join(report)).encode("utf-8"),
-                        file_name=f"aria_report_{selected_sector}_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
-                        mime="text/plain",
-                    )
-            with c2:
-                if st.button("🔔 Setup Alerts"):
-                    st.success("✅ Alerts configured! Real-time notifications enabled.")
-            with c3:
-                if st.button("🔄 Re-analyze"):
-                    agent.status = "idle"
-                    agent.thoughts = []
-                    agent.current_analysis = None
-                    agent.confidence_level = 0.0
-                    agent.analysis_progress = 0.0
-                    st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-
-        # IDLE state
-        if agent.status == "idle":
-            st.markdown("""
-            <div class='premium-card' style='text-align:center; padding:48px 24px;'>
-                <div style='font-size:4rem; margin-bottom:14px;'>🤖</div>
-                <h3 style='margin:0 0 8px 0;'>ARIA Ready for Mission</h3>
-                <p style='margin:0 0 16px 0; color:#cbd5e1;'>
-                    Select a target sector and activate the autonomous intelligence agent to begin a comprehensive strategic market analysis.
-                </p>
-                <div style='background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.28); border-radius:16px; padding:18px; margin-top:14px;'>
-                    <b>Capabilities</b> — multi-source intelligence • predictive analytics • autonomous insights • exportable reports
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    # FOOTER
-    conf = f"{agent.confidence_level:.1f}%" if agent.confidence_level > 0 else "0.0%"
-    st.markdown(f"""
-    <div class='footer-premium'>
-        <div style='max-width: 1200px; margin: 0 auto; padding: 0 16px; text-align:left;'>
-            <div style='display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap;'>
-                <div style='display:flex; align-items:center; gap:14px;'>
-                    <div style='width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;'>🤖</div>
-                    <div>
-                        <div style='font-weight:700;'>ARIA — Autonomous Research & Intelligence Agent</div>
-                        <div style='color:#94a3b8; font-size:.92rem;'>Advanced Neural Networks • Predictive Analytics • Real-time Intelligence</div>
+        recos = agent.current_analysis.get("reco") or []
+        if recos:
+            st.markdown('<div class="card"><h3>🧭 AI Strategic Recommendations</h3></div>', unsafe_allow_html=True)
+            for i, rec in enumerate(recos, 1):
+                st.markdown(f"""
+                <div class="card" style="border-color:rgba(167,139,250,.38);box-shadow:0 0 18px rgba(167,139,250,.12)">
+                    <div style="display:flex;gap:10px">
+                        <div class="badge b-blue">{i}</div>
+                        <div>{rec}</div>
+                    </div>
+                    <div style="margin-top:8px;display:flex;gap:8px">
+                        <span class="badge b-green">High Impact</span>
+                        <span class="badge b-blue">Strategic</span>
                     </div>
                 </div>
-                <div style='text-align:right;'>
-                    <div style='display:flex; gap:14px; flex-wrap:wrap; justify-content:flex-end; color:#cbd5e1;'>
-                        <span>⚡ Confidence: {conf}</span>
-                        <span>🧠 Neural Activity: {agent.neural_activity}</span>
-                        <span>📚 Sources: 1,247</span>
-                    </div>
-                    <div style='color:#94a3b8; font-size:.9rem;'>
-                        Last Analysis: {datetime.now().strftime('%H:%M:%S')} • Status: {"Active" if agent.status!="idle" else "Standby"} • Uptime: 99.97%
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
 
-if __name__ == "__main__":
-    main()
+        # Mini chat (poser une question à l’agent)
+        st.markdown('<div class="card"><h3>💬 Ask ARIA</h3></div>', unsafe_allow_html=True)
+        q = st.text_input("Pose une question sur le secteur (ex. risque, concurrence, tendances)…", key="ask")
+        if st.button("Send"):
+            user_msg = {"role":"user","content":q,"time":datetime.now().strftime("%H:%M:%S")}
+            st.session_state.chat.append(user_msg)
+            # Simple answer (LLM si clé, sinon heuristique)
+            ans = asyncio.run(maybe_llm_thought(f"Question: {q}", agent.language, sector))
+            if ans == f"Question: {q}":
+                # fallback heuristic
+                ans = f"{'🔎' if agent.language=='fr' else '🔎'} " \
+                      f"{'Indicateur clé' if agent.language=='fr' else 'Key indicator'}: " \
+                      f"{random.randint(8,12)}% {'CAGR estimé' if agent.language=='fr' else 'estimated CAGR'} • " \
+                      f"{'Priorité' if agent.language=='fr' else 'Priority'}: {'haute' if random.random()>0.5 else 'moyenne'}."
+            bot_msg = {"role":"assistant","content":ans,"time":datetime.now().strftime("%H:%M:%S")}
+            st.session_state.chat.append(bot_msg)
+            st.rerun()
+        # render chat
+        for m in st.session_state.chat[-6:]:
+            if m["role"]=="user":
+                st.markdown(f"""<div class="card" style="border-color:rgba(122,162,255,.35)"><b>👤 You</b> <span style="float:right;color:var(--muted)">{m['time']}</span><div>{m['content']}</div></div>""", unsafe_allow_html=True)
+            else:
+                st.markdown(f"""<div class="card" style="border-color:rgba(52,211,153,.35)"><b>🤖 ARIA</b> <span style="float:right;color:var(--muted)">{m['time']}</span><div>{m['content']}</div></div>""", unsafe_allow_html=True)
+
+        # Export
+        st.markdown('<div class="card"><h3>📤 Export & Actions</h3></div>', unsafe_allow_html=True)
+        c1,c2,c3 = st.columns(3)
+        with c1:
+            if st.button("📄 Export TXT"):
+                insights = agent.current_analysis.get("insights") or []
+                lines = [
+                    "ARIA – Strategic Intelligence Report",
+                    f"Generated: {datetime.now()}",
+                    f"Sector: {sector}",
+                    f"Confidence: {agent.confidence_level:.1f}%",
+                    "",
+                    "Executive Summary:",
+                    agent.current_analysis.get("summary",""), "",
+                    "Insights:"
+                ]
+                for ins in insights:
+                    lines.append(f"- [{ins.category}] {ins.title} | Impact {ins.impact_score}/10 | Conf {ins.confidence}% — {ins.description}")
+                lines.append("\nRecommendations:")
+                for i,r in enumerate(recos,1): lines.append(f"{i}. {r}")
+                st.download_button("⬇️ Download .txt", "\n".join(lines).encode("utf-8"),
+                                   file_name=f"ARIA_{sector}_{datetime.now().strftime('%Y%m%d_%H%M')}.txt", mime="text/plain")
+        with c2:
+            # PDF (reportlab) with graceful fallback
+            if st.button("🧾 Export PDF"):
+                try:
+                    from reportlab.lib.pagesizes import A4
+                    from reportlab.pdfgen import canvas
+                    from reportlab.lib.units import cm
+                    from reportlab.lib.colors import HexColor
+                    fn = f"ARIA_{sector}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+                    import io
+                    buff = io.BytesIO()
+                    c = canvas.Canvas(buff, pagesize=A4)
+                    W,H = A4
+                    c.setFillColor(HexColor("#0b1020")); c.rect(0,0,W,H,stroke=0,fill=1)
+                    c.setFillColor(HexColor("#7aa2ff")); c.setFont("Helvetica-Bold",22)
+                    c.drawString(2*cm, H-2.5*cm, "ARIA — Strategic Intelligence Report")
+                    c.setFillColor(HexColor("#dbe7ff")); c.setFont("Helvetica",10)
+                    c.drawString(2*cm, H-3.2*cm, f"Sector: {sector}  |  Confidence: {agent.confidence_level:.1f}%  |  Generated: {datetime.now():%Y-%m-%d %H:%M}")
+                    text = c.beginText(2*cm, H-4.2*cm); text.setFont("Helvetica",11); text.setFillColor(HexColor("#e6edf7"))
+                    text.textLine("Executive Summary")
+                    text.setFont("Helvetica",10); text.setFillColor(HexColor("#cfe0ff"))
+                    for line in textwrap.wrap(agent.current_analysis.get("summary",""), 95): text.textLine(line)
+                    text.textLine(""); text.setFont("Helvetica",11); text.setFillColor(HexColor("#e6edf7")); text.textLine("Insights")
+                    for ins in agent.current_analysis.get("insights") or []:
+                        text.setFont("Helvetica-Bold",10); text.setFillColor(HexColor("#7aa2ff")); text.textLine(f"• {ins.title} [{ins.category}]")
+                        text.setFont("Helvetica",10); text.setFillColor(HexColor("#cfe0ff"))
+                        for line in textwrap.wrap(f"Impact {ins.impact_score}/10 | Conf {ins.confidence}% — {ins.description}", 95): text.textLine(line)
+                        text.textLine("")
+                    text.setFont("Helvetica",11); text.setFillColor(HexColor("#e6edf7")); text.textLine("Recommendations")
+                    for i,r in enumerate(recos,1):
+                        text.setFont("Helvetica",10); text.setFillColor(HexColor("#cfe0ff")); text.textLine(f"{i}. {r}")
+                    c.drawText(text); c.showPage(); c.save(); buff.seek(0)
+                    st.download_button("⬇️ Download PDF", data=buff, file_name=fn, mime="application/pdf")
+                except Exception as e:
+                    st.warning("Reportlab non dispo — téléchargement Markdown.")
+                    md = f"# ARIA Report — {sector}\n\n**Confidence:** {agent.confidence_level:.1f}%\n\n## Executive Summary\n{agent.current_analysis.get('summary','')}\n\n## Insights\n" + \
+                         "\n".join([f"- **{i.title}** [{i.category}] — Impact {i.impact_score}/10, Conf {i.confidence}%\n  {i.description}" for i in (agent.current_analysis.get('insights') or [])]) + \
+                         "\n\n## Recommendations\n" + "\n".join([f"1. {r}" for r in recos])
+                    st.download_button("⬇️ Download .md", md.encode("utf-8"), file_name="ARIA_report.md", mime="text/markdown")
+        with c3:
+            if st.button("🔔 Setup Alerts"):
+                st.success("✅ Alerts enabled — ARIA will notify on major changes.")
