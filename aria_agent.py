@@ -83,7 +83,7 @@ class ARIAAgent:
         self.current_analysis: Optional[Dict] = None
         self.confidence_level: float = 0.0
         self.neural_activity: int = 850
-        self.activity_history: List[int] = [] # Ajout pour le graphique
+        self.activity_history: List[int] = []
         
         self.translations = {
             'fr': {
@@ -140,7 +140,7 @@ class ARIAAgent:
     def reset(self):
         self.status = "idle"; self.current_analysis = None; self.confidence_level = 0.0; self.neural_activity = 850; self.activity_history = []
 
-    # GRAPHIQUE 1: Jauge de Confiance (Réintégré)
+    # CORRECTION : Fonctions graphiques replacées A L'INTERIEUR de la classe
     def generate_confidence_gauge(self, lang: str) -> go.Figure:
         fig = go.Figure(go.Indicator(
             mode="gauge+number", value=self.confidence_level,
@@ -150,7 +150,6 @@ class ARIAAgent:
         fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", font={'color': "white"}, height=250, margin=dict(t=40, b=20, l=30, r=30))
         return fig
 
-    # GRAPHIQUE 2: Activité Neuronale (Réintégré)
     def generate_activity_chart(self, lang: str) -> go.Figure:
         fig = go.Figure(go.Scatter(x=list(range(len(self.activity_history))), y=self.activity_history, mode='lines', line=dict(color='#3b82f6', width=3, shape='spline'), fill='tozeroy', fillcolor='rgba(59, 130, 246, 0.2)'))
         fig.update_layout(title={'text': self.get_translation("activity_chart_title", lang)}, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font={'color': "white"}, height=250, margin=dict(t=40, b=20, l=30, r=30))
@@ -197,7 +196,7 @@ def main():
             m_col2.metric(agent.get_translation("confidence", lang), f"{agent.confidence_level:.1f}%")
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # AFFICHAGE DES GRAPHIQUES (Réintégré)
+        # CORRECTION : Affichage des graphiques après l'analyse
         if agent.status == "completed":
             with st.container():
                 st.plotly_chart(agent.generate_confidence_gauge(lang), use_container_width=True)
@@ -209,7 +208,7 @@ def main():
             with st.spinner(agent.get_translation("spinner_text", lang)):
                 thoughts = agent.get_translation("thoughts", lang)
                 thoughts_html = f"<div class='glass-card'><h3 style='color: white;'>{agent.get_translation('agent_thoughts_title', lang)}</h3>"
-                agent.activity_history.append(agent.neural_activity) # Point de départ
+                agent.activity_history.append(agent.neural_activity)
                 for i, thought_text in enumerate(thoughts):
                     time.sleep(random.uniform(0.4, 0.7)); agent.neural_activity += random.randint(-40, 60); agent.activity_history.append(agent.neural_activity)
                     agent.confidence_level = (i + 1) / len(thoughts) * 85 + random.uniform(-5, 5);
