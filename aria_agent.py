@@ -78,7 +78,6 @@ class MarketInsight:
 
 # --- ARIA Agent Class (Finalisée et Corrigée) ---
 class ARIAAgent:
-    # CORRECTION : L'agent prend maintenant la langue comme état interne
     def __init__(self, language: str = 'fr'):
         self.language = language
         self.status = "idle"
@@ -113,7 +112,6 @@ class ARIAAgent:
         }
         self.market_data = self._generate_all_sector_data()
 
-    # CORRECTION : La méthode utilise maintenant self.language
     def get_translation(self, key: str) -> str:
         return self.translations[self.language].get(key, f"<{key}>")
 
@@ -162,11 +160,9 @@ def main():
     if 'language' not in st.session_state:
         st.session_state.language = 'fr'
     
-    # CORRECTION : L'agent est instancié ou mis à jour avec la bonne langue
-    if 'agent' not in st.session_state:
+    # Instancie ou met à jour l'agent avec la langue de la session
+    if 'agent' not in st.session_state or st.session_state.agent.language != st.session_state.language:
         st.session_state.agent = ARIAAgent(st.session_state.language)
-    else:
-        st.session_state.agent.language = st.session_state.language
     
     agent = st.session_state.agent
 
