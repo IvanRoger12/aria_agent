@@ -2,7 +2,7 @@ import streamlit as st
 import time
 import random
 from datetime import datetime
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import plotly.graph_objects as go
 from typing import Dict, List, Optional
 
@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- CSS (Mise en forme que vous aimez, conservée) ---
+# --- CSS (Mise en forme que vous aimez, avec la correction pour les métriques) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
@@ -43,7 +43,12 @@ st.markdown("""
     
     .thought-bubble { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 20px; margin-bottom: 15px; border-radius: 0 15px 15px 0; box-shadow: 0 5px 15px rgba(59, 130, 246, 0.1); }
     
-    .metric-value { font-size: 2.2rem; font-weight: 700; font-family: 'Orbitron', monospace; color: #60a5fa; text-shadow: 0 0 10px rgba(96, 165, 250, 0.5); }
+    /* NOUVEAU : Correction pour rendre les valeurs des métriques en blanc */
+    [data-testid="stMetricValue"] {
+        color: white;
+        font-family: 'Orbitron', monospace;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
     
     .stButton > button { background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: white; border: none; border-radius: 12px; font-weight: 600; font-family: 'Inter', sans-serif; padding: 12px 30px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); text-transform: uppercase; letter-spacing: 1px; width: 100%; }
     .stButton > button:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 25px rgba(59, 130, 246, 0.5); background: linear-gradient(45deg, #2563eb, #7c3aed); }
@@ -62,17 +67,8 @@ st.markdown("""
     .recommendation-bubble { display: flex; align-items: start; gap: 20px; background: rgba(139, 92, 246, 0.1); border-radius: 15px; padding: 20px; margin: 15px 0; border-left: 4px solid #8b5cf6; }
     .recommendation-number { background: linear-gradient(45deg, #8b5cf6, #ec4899); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: bold; font-size: 1.2rem; box-shadow: 0 0 15px rgba(139, 92, 246, 0.5); }
 
-    /* NOUVEAU : CSS pour la page d'accueil animée */
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    .welcome-capability {
-        display: inline-block;
-        background: rgba(255, 255, 255, 0.1);
-        padding: 8px 15px;
-        margin: 5px;
-        border-radius: 15px;
-        font-weight: 500;
-        animation: fadeInUp 0.5s ease-out backwards;
-    }
+    .welcome-capability { display: inline-block; background: rgba(255, 255, 255, 0.1); padding: 8px 15px; margin: 5px; border-radius: 15px; font-weight: 500; animation: fadeInUp 0.5s ease-out backwards; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -86,51 +82,34 @@ class MarketInsight:
     confidence: float
     category: str
 
-# --- ARIA Agent Class (Maintenant Multilingue et Complet) ---
+# --- ARIA Agent Class (Finalisée) ---
 class ARIAAgent:
     def __init__(self):
         self.status = "idle"
-        self.thoughts: List[dict] = []
         self.current_analysis: Optional[Dict] = None
         self.confidence_level: float = 0.0
         self.neural_activity: int = 850
-        self.activity_history: List[int] = []
         
-        # Dictionnaire central pour toutes les traductions
         self.translations = {
             'fr': {
-                "agent_desc": "Agent de Recherche et Intelligence Autonome",
-                "status_idle": "En veille", "status_thinking": "Réflexion...", "status_analyzing": "Analyse...", "status_completed": "Terminé",
+                "agent_desc": "Agent de Recherche et Intelligence Autonome", "status_idle": "En veille", "status_thinking": "Réflexion...", "status_analyzing": "Analyse...", "status_completed": "Terminé",
                 "sectors": { "FinTech": "🏦 Technologies Financières", "HealthTech": "❤️ Technologies de la Santé", "SaaS": "☁️ Logiciels (SaaS)", "E-commerce": "🛒 Commerce Électronique", "PropTech": "🏠 Technologies Immobilières", "EdTech": "🎓 Technologies de l'Éducation" },
                 "thoughts": [ "Initialisation des capteurs...", "Activation des réseaux neuronaux...", "Ingestion des données...", "Traitement par algorithmes...", "Corrélation des signaux...", "Modélisation prédictive...", "Génération d'insights...", "Synthèse finale..." ],
                 "activate_button": "🚀 ACTIVER ARIA", "stop_button": "⏹️ STOPPER L'AGENT",
                 "analysis_sector_title": "🎯 Secteur d'Analyse",
-                "welcome_message": "ARIA est prête à analyser le marché.",
-                "welcome_capabilities": ["Intelligence de Marché", "Analyse Prédictive", "Identification d'Opportunités", "Synthèse Stratégique"],
-                "agent_thoughts_title": "🧠 Pensées de l'Agent",
-                "summary_title": "📋 Synthèse Stratégique",
-                "insights_title": "⚡ Insights Clés",
-                "recommendations_title": "🎯 Recommandations IA",
-                "chat_title": "💬 Discuter avec ARIA",
-                "chat_prompt": "Posez votre question...",
-                "metrics_title": "📊 Métriques", "nodes": "Noeuds", "confidence": "Confiance"
+                "welcome_message": "ARIA est prête à analyser le marché.", "welcome_capabilities": ["Intelligence de Marché", "Analyse Prédictive", "Identification d'Opportunités", "Synthèse Stratégique"],
+                "agent_thoughts_title": "🧠 Pensées de l'Agent", "summary_title": "📋 Synthèse Stratégique", "insights_title": "⚡ Insights Clés", "recommendations_title": "🎯 Recommandations IA",
+                "metrics_title": "📊 Métriques", "nodes": "Noeuds", "confidence": "Confiance", "spinner_text": "Analyse en cours..."
             },
             'en': {
-                "agent_desc": "Autonomous Research & Intelligence Agent",
-                "status_idle": "On Standby", "status_thinking": "Thinking...", "status_analyzing": "Analyzing...", "status_completed": "Completed",
+                "agent_desc": "Autonomous Research & Intelligence Agent", "status_idle": "On Standby", "status_thinking": "Thinking...", "status_analyzing": "Analyzing...", "status_completed": "Completed",
                 "sectors": { "FinTech": "🏦 Financial Technologies", "HealthTech": "❤️ Health Technologies", "SaaS": "☁️ Software (SaaS)", "E-commerce": "🛒 E-commerce", "PropTech": "🏠 Property Technologies", "EdTech": "🎓 Education Technologies" },
                 "thoughts": [ "Initializing sensors...", "Activating neural networks...", "Ingesting data...", "Processing via algorithms...", "Correlating signals...", "Predictive modeling...", "Generating insights...", "Final synthesis..." ],
                 "activate_button": "🚀 ACTIVATE ARIA", "stop_button": "⏹️ STOP AGENT",
                 "analysis_sector_title": "🎯 Analysis Sector",
-                "welcome_message": "ARIA is ready to analyze the market.",
-                "welcome_capabilities": ["Market Intelligence", "Predictive Analysis", "Opportunity Identification", "Strategic Synthesis"],
-                "agent_thoughts_title": "🧠 Agent Thoughts",
-                "summary_title": "📋 Executive Summary",
-                "insights_title": "⚡ Key Insights",
-                "recommendations_title": "🎯 AI Recommendations",
-                "chat_title": "💬 Chat with ARIA",
-                "chat_prompt": "Ask your question...",
-                "metrics_title": "📊 Metrics", "nodes": "Nodes", "confidence": "Confidence"
+                "welcome_message": "ARIA is ready to analyze the market.", "welcome_capabilities": ["Market Intelligence", "Predictive Analysis", "Opportunity Identification", "Strategic Synthesis"],
+                "agent_thoughts_title": "🧠 Agent Thoughts", "summary_title": "📋 Executive Summary", "insights_title": "⚡ Key Insights", "recommendations_title": "🎯 AI Recommendations",
+                "metrics_title": "📊 Metrics", "nodes": "Nodes", "confidence": "Confidence", "spinner_text": "Analysis in progress..."
             }
         }
         self.market_data = self._generate_all_sector_data()
@@ -162,12 +141,10 @@ class ARIAAgent:
         return all_data
 
     def reset(self):
-        self.status = "idle"; self.thoughts = []; self.current_analysis = None; self.confidence_level = 0.0
-        self.neural_activity = 850; self.activity_history = []; st.session_state.chat_messages = []
+        self.status = "idle"; self.current_analysis = None; self.confidence_level = 0.0; self.neural_activity = 850
 
 # --- Interface Principale ---
 def main():
-    # Initialisation de l'état de session
     if 'agent' not in st.session_state:
         st.session_state.agent = ARIAAgent()
     if 'language' not in st.session_state:
@@ -181,7 +158,7 @@ def main():
     with header_cols[0]:
         st.markdown(f"<div style='text-align: center;'><h1 class='premium-title'>ARIA</h1><p style='color: #cbd5e1; font-size: 1.3rem;'>{agent.get_translation('agent_desc', lang)}</p></div>", unsafe_allow_html=True)
     with header_cols[1]:
-        lang_choice = st.selectbox("Language", ["🇫🇷 Français", "🇺🇸 English"], label_visibility="collapsed")
+        lang_choice = st.selectbox("Language", ["🇫🇷 Français", "🇺🇸 English"], index=0 if lang == 'fr' else 1, label_visibility="collapsed")
         new_lang = 'fr' if 'Français' in lang_choice else 'en'
         if new_lang != lang:
             st.session_state.language = new_lang
@@ -192,16 +169,13 @@ def main():
 
     with col1: # Colonne de gauche (Contrôles)
         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        # Avatar et Statut
         avatar_class = "agent-avatar active" if agent.status != "idle" else "agent-avatar"
         st.markdown(f"<div style='text-align: center; margin-bottom: 25px;'><div class='{avatar_class}'><div class='agent-core'>🧠</div></div><div><span class='status-indicator status-{agent.status}'></span><span style='color: white; font-weight: 500;'>{agent.get_translation(f'status_{agent.status}', lang)}</span></div></div>", unsafe_allow_html=True)
         
-        # Sélecteur de secteur
         st.markdown(f"<h4 style='color: white; text-align: center;'>{agent.get_translation('analysis_sector_title', lang)}</h4>", unsafe_allow_html=True)
         sectors = agent.get_translation("sectors", lang)
         selected_sector = st.selectbox("Secteur", list(sectors.keys()), format_func=lambda x: sectors[x], label_visibility="collapsed")
 
-        # Bouton d'activation
         st.markdown("<br>", unsafe_allow_html=True)
         if agent.status in ["idle", "completed"]:
             if st.button(agent.get_translation("activate_button", lang), type="primary"):
@@ -215,7 +189,6 @@ def main():
                 agent.reset()
                 st.rerun()
         
-        # Métriques pendant l'analyse
         if agent.status != "idle":
             st.markdown(f"<h4 style='color: white; margin-top: 20px;'>{agent.get_translation('metrics_title', lang)}</h4>", unsafe_allow_html=True)
             m_col1, m_col2 = st.columns(2)
@@ -227,24 +200,21 @@ def main():
         results_placeholder = st.empty()
 
         if st.session_state.get("running_analysis", False):
-            # --- Simulation de l'analyse en direct ---
-            thoughts = agent.get_translation("thoughts", lang)
-            thoughts_html = f"<div class='glass-card'><h3 style='color: white;'>{agent.get_translation('agent_thoughts_title', lang)}</h3>"
-            for i, thought_text in enumerate(thoughts):
-                time.sleep(random.uniform(0.4, 0.7))
-                agent.neural_activity += random.randint(-40, 60)
-                agent.confidence_level = (i + 1) / len(thoughts) * 85 + random.uniform(-5, 5)
-                if i >= 2: agent.status = "analyzing"
+            # --- Simulation avec Spinner ---
+            with st.spinner(agent.get_translation("spinner_text", lang)):
+                thoughts = agent.get_translation("thoughts", lang)
+                thoughts_html = f"<div class='glass-card'><h3 style='color: white;'>{agent.get_translation('agent_thoughts_title', lang)}</h3>"
+                for i, thought_text in enumerate(thoughts):
+                    time.sleep(random.uniform(0.4, 0.7))
+                    agent.neural_activity += random.randint(-40, 60)
+                    agent.confidence_level = (i + 1) / len(thoughts) * 85 + random.uniform(-5, 5)
+                    if i >= 2: agent.status = "analyzing"
+                    
+                    thought_html_item = f"<div class='thought-bubble' style='animation: fadeInUp 0.5s ease-out backwards;'>... {thought_text}</div>"
+                    thoughts_html += thought_html_item
+                    with results_placeholder.container():
+                        st.markdown(thoughts_html + "</div>", unsafe_allow_html=True)
                 
-                thought_html_item = f"""<div class='thought-bubble' style='animation: fadeInUp 0.5s ease-out backwards;'>
-                    <div style='display: flex; align-items: center; gap: 15px;'>
-                        <div style='font-size: 1.5rem;'>{random.choice(['🔍', '🧠', '📊', '⚡', '🎯', '📈', '🤖', '✨'])}</div>
-                        <div><p style='color: white; margin: 0;'>{thought_text}</p></div>
-                    </div></div>"""
-                thoughts_html += thought_html_item
-                with results_placeholder.container():
-                    st.markdown(thoughts_html + "</div>", unsafe_allow_html=True)
-            
             agent.status = "completed"
             agent.current_analysis = agent.market_data[st.session_state.selected_sector][lang]
             st.session_state.running_analysis = False
@@ -255,6 +225,7 @@ def main():
             with results_placeholder.container():
                 analysis = agent.current_analysis
                 st.markdown(f"<div class='glass-card' style='animation: fadeInUp 0.5s ease-out;'><h3>{agent.get_translation('summary_title', lang)}</h3><p style='font-size: 1.1rem;'>{analysis['summary']}</p></div>", unsafe_allow_html=True)
+                
                 st.markdown(f"<div class='glass-card'><h3 style='color: white;'>{agent.get_translation('insights_title', lang)}</h3>", unsafe_allow_html=True)
                 for i, insight in enumerate(analysis["insights"]):
                     icon = {"opportunity": "💡", "threat": "🚨", "trend": "📊"}.get(insight.category)
@@ -272,7 +243,6 @@ def main():
                 st.markdown("<div class='glass-card' style='text-align: center; padding: 40px;'>", unsafe_allow_html=True)
                 welcome_message_placeholder = st.empty()
                 
-                # Effet machine à écrire
                 msg = agent.get_translation('welcome_message', lang)
                 displayed_msg = ""
                 for char in msg:
@@ -280,13 +250,9 @@ def main():
                     welcome_message_placeholder.markdown(f"<h2 style='font-size: 2rem;'>{displayed_msg}</h2>", unsafe_allow_html=True)
                     time.sleep(0.05)
                 
-                # Affichage progressif des capacités
                 time.sleep(0.5)
                 capabilities = agent.get_translation("welcome_capabilities", lang)
-                caps_html = "<div>"
-                for i, cap in enumerate(capabilities):
-                    caps_html += f"<span class='welcome-capability' style='animation-delay: {i*0.2}s;'>{cap}</span>"
-                caps_html += "</div>"
+                caps_html = "<div>" + "".join([f"<span class='welcome-capability' style='animation-delay: {i*0.2}s;'>{cap}</span>" for i, cap in enumerate(capabilities)]) + "</div>"
                 st.markdown(caps_html, unsafe_allow_html=True)
                 st.markdown("</div>", unsafe_allow_html=True)
 
