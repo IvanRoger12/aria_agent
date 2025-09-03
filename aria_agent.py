@@ -76,9 +76,11 @@ class MarketInsight:
     confidence: float
     category: str
 
-# --- ARIA Agent Class (Finalisée) ---
+# --- ARIA Agent Class (Finalisée et Corrigée) ---
 class ARIAAgent:
-    def __init__(self):
+    # CORRECTION : L'agent prend maintenant la langue comme état interne
+    def __init__(self, language: str = 'fr'):
+        self.language = language
         self.status = "idle"
         self.current_analysis: Optional[Dict] = None
         self.confidence_level: float = 0.0
@@ -111,11 +113,12 @@ class ARIAAgent:
         }
         self.market_data = self._generate_all_sector_data()
 
-    def get_translation(self, key: str, lang: str) -> str:
-        return self.translations[lang].get(key, f"<{key}>")
+    # CORRECTION : La méthode utilise maintenant self.language
+    def get_translation(self, key: str) -> str:
+        return self.translations[self.language].get(key, f"<{key}>")
 
     def _generate_sector_data(self, sector_key: str, lang: str) -> Dict:
-        name = self.get_translation("sectors", lang)[sector_key]
+        name = self.translations[lang]["sectors"][sector_key]
         if lang == 'fr':
             return {
                 "summary": f"Le secteur {name} connaît une transformation majeure, tirée par l'IA et une demande accrue pour des solutions personnalisées.",
@@ -132,7 +135,7 @@ class ARIAAgent:
     def _generate_all_sector_data(self) -> Dict:
         all_data = {}
         for lang in ['fr', 'en']:
-            for key in self.get_translation("sectors", lang).keys():
+            for key in self.translations[lang]["sectors"].keys():
                 if key not in all_data: all_data[key] = {}
                 all_data[key][lang] = self._generate_sector_data(key, lang)
         return all_data
@@ -140,74 +143,78 @@ class ARIAAgent:
     def reset(self):
         self.status = "idle"; self.current_analysis = None; self.confidence_level = 0.0; self.neural_activity = 850; self.activity_history = []
 
-    # CORRECTION : Fonctions graphiques replacées A L'INTERIEUR de la classe
-    def generate_confidence_gauge(self, lang: str) -> go.Figure:
+    def generate_confidence_gauge(self) -> go.Figure:
         fig = go.Figure(go.Indicator(
             mode="gauge+number", value=self.confidence_level,
-            title={'text': self.get_translation("gauge_title", lang), 'font': {'color': 'white'}},
+            title={'text': self.get_translation("gauge_title"), 'font': {'color': 'white'}},
             gauge={'axis': {'range': [None, 100]}, 'bar': {'color': "#3b82f6"},
                    'steps': [{'range': [0, 60], 'color': 'rgba(239, 68, 68, 0.3)'}, {'range': [60, 85], 'color': 'rgba(245, 158, 11, 0.3)'}, {'range': [85, 100], 'color': 'rgba(16, 185, 129, 0.3)'}]}))
         fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", font={'color': "white"}, height=250, margin=dict(t=40, b=20, l=30, r=30))
         return fig
 
-    def generate_activity_chart(self, lang: str) -> go.Figure:
+    def generate_activity_chart(self) -> go.Figure:
         fig = go.Figure(go.Scatter(x=list(range(len(self.activity_history))), y=self.activity_history, mode='lines', line=dict(color='#3b82f6', width=3, shape='spline'), fill='tozeroy', fillcolor='rgba(59, 130, 246, 0.2)'))
-        fig.update_layout(title={'text': self.get_translation("activity_chart_title", lang)}, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font={'color': "white"}, height=250, margin=dict(t=40, b=20, l=30, r=30))
+        fig.update_layout(title={'text': self.get_translation("activity_chart_title")}, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font={'color': "white"}, height=250, margin=dict(t=40, b=20, l=30, r=30))
         return fig
 
 # --- Interface Principale ---
 def main():
-    if 'agent' not in st.session_state: st.session_state.agent = ARIAAgent()
-    if 'language' not in st.session_state: st.session_state.language = 'fr'
+    if 'language' not in st.session_state:
+        st.session_state.language = 'fr'
+    
+    # CORRECTION : L'agent est instancié ou mis à jour avec la bonne langue
+    if 'agent' not in st.session_state:
+        st.session_state.agent = ARIAAgent(st.session_state.language)
+    else:
+        st.session_state.agent.language = st.session_state.language
     
     agent = st.session_state.agent
-    lang = st.session_state.language
 
     header_cols = st.columns([0.85, 0.15])
     with header_cols[0]:
-        st.markdown(f"<div style='text-align: center;'><h1 class='premium-title'>ARIA</h1><p style='color: #cbd5e1; font-size: 1.3rem;'>{agent.get_translation('agent_desc', lang)}</p></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: center;'><h1 class='premium-title'>ARIA</h1><p style='color: #cbd5e1; font-size: 1.3rem;'>{agent.get_translation('agent_desc')}</p></div>", unsafe_allow_html=True)
     with header_cols[1]:
-        lang_choice = st.selectbox("Language", ["🇫🇷 Français", "🇺🇸 English"], index=0 if lang == 'fr' else 1, label_visibility="collapsed")
+        lang_choice = st.selectbox("Language", ["🇫🇷 Français", "🇺🇸 English"], index=0 if st.session_state.language == 'fr' else 1, label_visibility="collapsed")
         new_lang = 'fr' if 'Français' in lang_choice else 'en'
-        if new_lang != lang:
-            st.session_state.language = new_lang; st.rerun()
+        if new_lang != st.session_state.language:
+            st.session_state.language = new_lang
+            st.rerun()
 
     col1, col2 = st.columns([0.4, 0.6])
 
     with col1:
         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         avatar_class = "agent-avatar active" if agent.status != "idle" else "agent-avatar"
-        st.markdown(f"<div style='text-align: center; margin-bottom: 25px;'><div class='{avatar_class}'><div class='agent-core'>🧠</div></div><div><span class='status-indicator status-{agent.status}'></span><span style='color: white; font-weight: 500;'>{agent.get_translation(f'status_{agent.status}', lang)}</span></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<h4 style='color: white; text-align: center;'>{agent.get_translation('analysis_sector_title', lang)}</h4>", unsafe_allow_html=True)
-        sectors = agent.get_translation("sectors", lang)
+        st.markdown(f"<div style='text-align: center; margin-bottom: 25px;'><div class='{avatar_class}'><div class='agent-core'>🧠</div></div><div><span class='status-indicator status-{agent.status}'></span><span style='color: white; font-weight: 500;'>{agent.get_translation(f'status_{agent.status}')}</span></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color: white; text-align: center;'>{agent.get_translation('analysis_sector_title')}</h4>", unsafe_allow_html=True)
+        sectors = agent.get_translation("sectors")
         selected_sector = st.selectbox("Secteur", list(sectors.keys()), format_func=lambda x: sectors[x], label_visibility="collapsed")
         st.markdown("<br>", unsafe_allow_html=True)
         if agent.status in ["idle", "completed"]:
-            if st.button(agent.get_translation("activate_button", lang), type="primary"):
+            if st.button(agent.get_translation("activate_button"), type="primary"):
                 st.session_state.running_analysis = True; st.session_state.selected_sector = selected_sector
                 agent.reset(); agent.status = "thinking"; st.rerun()
         else:
-            if st.button(agent.get_translation("stop_button", lang)):
+            if st.button(agent.get_translation("stop_button")):
                 st.session_state.running_analysis = False; agent.reset(); st.rerun()
         if agent.status != "idle":
-            st.markdown(f"<h4 style='color: white; margin-top: 20px;'>{agent.get_translation('metrics_title', lang)}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<h4 style='color: white; margin-top: 20px;'>{agent.get_translation('metrics_title')}</h4>", unsafe_allow_html=True)
             m_col1, m_col2 = st.columns(2)
-            m_col1.metric(agent.get_translation("nodes", lang), f"{agent.neural_activity}")
-            m_col2.metric(agent.get_translation("confidence", lang), f"{agent.confidence_level:.1f}%")
+            m_col1.metric(agent.get_translation("nodes"), f"{agent.neural_activity}")
+            m_col2.metric(agent.get_translation("confidence"), f"{agent.confidence_level:.1f}%")
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # CORRECTION : Affichage des graphiques après l'analyse
         if agent.status == "completed":
             with st.container():
-                st.plotly_chart(agent.generate_confidence_gauge(lang), use_container_width=True)
-                st.plotly_chart(agent.generate_activity_chart(lang), use_container_width=True)
+                st.plotly_chart(agent.generate_confidence_gauge(), use_container_width=True)
+                st.plotly_chart(agent.generate_activity_chart(), use_container_width=True)
 
     with col2:
         results_placeholder = st.empty()
         if st.session_state.get("running_analysis", False):
-            with st.spinner(agent.get_translation("spinner_text", lang)):
-                thoughts = agent.get_translation("thoughts", lang)
-                thoughts_html = f"<div class='glass-card'><h3 style='color: white;'>{agent.get_translation('agent_thoughts_title', lang)}</h3>"
+            with st.spinner(agent.get_translation("spinner_text")):
+                thoughts = agent.get_translation("thoughts")
+                thoughts_html = f"<div class='glass-card'><h3 style='color: white;'>{agent.get_translation('agent_thoughts_title')}</h3>"
                 agent.activity_history.append(agent.neural_activity)
                 for i, thought_text in enumerate(thoughts):
                     time.sleep(random.uniform(0.4, 0.7)); agent.neural_activity += random.randint(-40, 60); agent.activity_history.append(agent.neural_activity)
@@ -216,19 +223,19 @@ def main():
                     thoughts_html += f"<div class='thought-bubble' style='animation: fadeInUp 0.5s ease-out backwards;'>... {thought_text}</div>"
                     with results_placeholder.container():
                         st.markdown(thoughts_html + "</div>", unsafe_allow_html=True)
-            agent.status = "completed"; agent.current_analysis = agent.market_data[st.session_state.selected_sector][lang]
+            agent.status = "completed"; agent.current_analysis = agent.market_data[st.session_state.selected_sector][agent.language]
             st.session_state.running_analysis = False; st.rerun()
 
         elif agent.status == "completed":
             with results_placeholder.container():
                 analysis = agent.current_analysis
-                st.markdown(f"<div class='glass-card' style='animation: fadeInUp 0.5s ease-out;'><h3>{agent.get_translation('summary_title', lang)}</h3><p style='font-size: 1.1rem;'>{analysis['summary']}</p></div>", unsafe_allow_html=True)
-                st.markdown(f"<div class='glass-card'><h3 style='color: white;'>{agent.get_translation('insights_title', lang)}</h3>", unsafe_allow_html=True)
+                st.markdown(f"<div class='glass-card' style='animation: fadeInUp 0.5s ease-out;'><h3>{agent.get_translation('summary_title')}</h3><p style='font-size: 1.1rem;'>{analysis['summary']}</p></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='glass-card'><h3 style='color: white;'>{agent.get_translation('insights_title')}</h3>", unsafe_allow_html=True)
                 for i, insight in enumerate(analysis["insights"]):
                     icon = {"opportunity": "💡", "threat": "🚨", "trend": "📊"}.get(insight.category)
                     st.markdown(f"<div class='insight-card {insight.category}-card' style='animation: fadeInUp {0.6 + i*0.1}s ease-out backwards;'><h5>{icon} {insight.title}</h5><p>{insight.description}</p></div>", unsafe_allow_html=True)
                 st.markdown("</div>", unsafe_allow_html=True)
-                st.markdown(f"<div class='glass-card'><h3 style='color: white;'>{agent.get_translation('recommendations_title', lang)}</h3>", unsafe_allow_html=True)
+                st.markdown(f"<div class='glass-card'><h3 style='color: white;'>{agent.get_translation('recommendations_title')}</h3>", unsafe_allow_html=True)
                 for i, rec in enumerate(analysis["recommendations"]):
                     st.markdown(f"<div class='recommendation-bubble' style='animation: fadeInUp {0.8 + i*0.15}s ease-out backwards;'><div class='recommendation-number'>{i+1}</div><p style='margin: auto 0;'>{rec}</p></div>", unsafe_allow_html=True)
                 st.markdown("</div>", unsafe_allow_html=True)
@@ -237,12 +244,12 @@ def main():
             with results_placeholder.container():
                 st.markdown("<div class='glass-card' style='text-align: center; padding: 40px;'>", unsafe_allow_html=True)
                 welcome_message_placeholder = st.empty()
-                msg = agent.get_translation('welcome_message', lang)
+                msg = agent.get_translation('welcome_message')
                 displayed_msg = "";
                 for char in msg:
                     displayed_msg += char; welcome_message_placeholder.markdown(f"<h2 style='font-size: 2rem;'>{displayed_msg}</h2>", unsafe_allow_html=True); time.sleep(0.05)
                 time.sleep(0.5)
-                capabilities = agent.get_translation("welcome_capabilities", lang)
+                capabilities = agent.get_translation("welcome_capabilities")
                 caps_html = "<div>" + "".join([f"<span class='welcome-capability' style='animation-delay: {i*0.2}s;'>{cap}</span>" for i, cap in enumerate(capabilities)]) + "</div>"
                 st.markdown(caps_html, unsafe_allow_html=True)
                 st.markdown("</div>", unsafe_allow_html=True)
