@@ -2,7 +2,7 @@ import streamlit as st
 import time
 import random
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import plotly.graph_objects as go
 from typing import Dict, List, Optional
 
@@ -43,12 +43,7 @@ st.markdown("""
     
     .thought-bubble { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 20px; margin-bottom: 15px; border-radius: 0 15px 15px 0; box-shadow: 0 5px 15px rgba(59, 130, 246, 0.1); }
     
-    /* NOUVEAU : Correction pour rendre les valeurs des métriques en blanc */
-    [data-testid="stMetricValue"] {
-        color: white;
-        font-family: 'Orbitron', monospace;
-        text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    }
+    [data-testid="stMetricValue"] { color: white; font-family: 'Orbitron', monospace; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
     
     .stButton > button { background: linear-gradient(45deg, #3b82f6, #8b5cf6); color: white; border: none; border-radius: 12px; font-weight: 600; font-family: 'Inter', sans-serif; padding: 12px 30px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); text-transform: uppercase; letter-spacing: 1px; width: 100%; }
     .stButton > button:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 25px rgba(59, 130, 246, 0.5); background: linear-gradient(45deg, #2563eb, #7c3aed); }
@@ -72,7 +67,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
 # --- Data Classes ---
 @dataclass
 class MarketInsight:
@@ -89,6 +83,7 @@ class ARIAAgent:
         self.current_analysis: Optional[Dict] = None
         self.confidence_level: float = 0.0
         self.neural_activity: int = 850
+        self.activity_history: List[int] = [] # Ajout pour le graphique
         
         self.translations = {
             'fr': {
@@ -99,7 +94,8 @@ class ARIAAgent:
                 "analysis_sector_title": "🎯 Secteur d'Analyse",
                 "welcome_message": "ARIA est prête à analyser le marché.", "welcome_capabilities": ["Intelligence de Marché", "Analyse Prédictive", "Identification d'Opportunités", "Synthèse Stratégique"],
                 "agent_thoughts_title": "🧠 Pensées de l'Agent", "summary_title": "📋 Synthèse Stratégique", "insights_title": "⚡ Insights Clés", "recommendations_title": "🎯 Recommandations IA",
-                "metrics_title": "📊 Métriques", "nodes": "Noeuds", "confidence": "Confiance", "spinner_text": "Analyse en cours..."
+                "metrics_title": "📊 Métriques", "nodes": "Noeuds", "confidence": "Confiance", "spinner_text": "Analyse en cours...",
+                "gauge_title": "Niveau de Confiance", "activity_chart_title": "Activité Neuronale"
             },
             'en': {
                 "agent_desc": "Autonomous Research & Intelligence Agent", "status_idle": "On Standby", "status_thinking": "Thinking...", "status_analyzing": "Analyzing...", "status_completed": "Completed",
@@ -109,7 +105,8 @@ class ARIAAgent:
                 "analysis_sector_title": "🎯 Analysis Sector",
                 "welcome_message": "ARIA is ready to analyze the market.", "welcome_capabilities": ["Market Intelligence", "Predictive Analysis", "Opportunity Identification", "Strategic Synthesis"],
                 "agent_thoughts_title": "🧠 Agent Thoughts", "summary_title": "📋 Executive Summary", "insights_title": "⚡ Key Insights", "recommendations_title": "🎯 AI Recommendations",
-                "metrics_title": "📊 Metrics", "nodes": "Nodes", "confidence": "Confidence", "spinner_text": "Analysis in progress..."
+                "metrics_title": "📊 Metrics", "nodes": "Nodes", "confidence": "Confidence", "spinner_text": "Analysis in progress...",
+                "gauge_title": "Confidence Level", "activity_chart_title": "Neural Activity"
             }
         }
         self.market_data = self._generate_all_sector_data()
@@ -141,19 +138,32 @@ class ARIAAgent:
         return all_data
 
     def reset(self):
-        self.status = "idle"; self.current_analysis = None; self.confidence_level = 0.0; self.neural_activity = 850
+        self.status = "idle"; self.current_analysis = None; self.confidence_level = 0.0; self.neural_activity = 850; self.activity_history = []
+
+    # GRAPHIQUE 1: Jauge de Confiance (Réintégré)
+    def generate_confidence_gauge(self, lang: str) -> go.Figure:
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number", value=self.confidence_level,
+            title={'text': self.get_translation("gauge_title", lang), 'font': {'color': 'white'}},
+            gauge={'axis': {'range': [None, 100]}, 'bar': {'color': "#3b82f6"},
+                   'steps': [{'range': [0, 60], 'color': 'rgba(239, 68, 68, 0.3)'}, {'range': [60, 85], 'color': 'rgba(245, 158, 11, 0.3)'}, {'range': [85, 100], 'color': 'rgba(16, 185, 129, 0.3)'}]}))
+        fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", font={'color': "white"}, height=250, margin=dict(t=40, b=20, l=30, r=30))
+        return fig
+
+    # GRAPHIQUE 2: Activité Neuronale (Réintégré)
+    def generate_activity_chart(self, lang: str) -> go.Figure:
+        fig = go.Figure(go.Scatter(x=list(range(len(self.activity_history))), y=self.activity_history, mode='lines', line=dict(color='#3b82f6', width=3, shape='spline'), fill='tozeroy', fillcolor='rgba(59, 130, 246, 0.2)'))
+        fig.update_layout(title={'text': self.get_translation("activity_chart_title", lang)}, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font={'color': "white"}, height=250, margin=dict(t=40, b=20, l=30, r=30))
+        return fig
 
 # --- Interface Principale ---
 def main():
-    if 'agent' not in st.session_state:
-        st.session_state.agent = ARIAAgent()
-    if 'language' not in st.session_state:
-        st.session_state.language = 'fr'
+    if 'agent' not in st.session_state: st.session_state.agent = ARIAAgent()
+    if 'language' not in st.session_state: st.session_state.language = 'fr'
     
     agent = st.session_state.agent
     lang = st.session_state.language
 
-    # --- Header avec sélecteur de langue ---
     header_cols = st.columns([0.85, 0.15])
     with header_cols[0]:
         st.markdown(f"<div style='text-align: center;'><h1 class='premium-title'>ARIA</h1><p style='color: #cbd5e1; font-size: 1.3rem;'>{agent.get_translation('agent_desc', lang)}</p></div>", unsafe_allow_html=True)
@@ -161,34 +171,25 @@ def main():
         lang_choice = st.selectbox("Language", ["🇫🇷 Français", "🇺🇸 English"], index=0 if lang == 'fr' else 1, label_visibility="collapsed")
         new_lang = 'fr' if 'Français' in lang_choice else 'en'
         if new_lang != lang:
-            st.session_state.language = new_lang
-            st.rerun()
+            st.session_state.language = new_lang; st.rerun()
 
-    # --- Layout ---
     col1, col2 = st.columns([0.4, 0.6])
 
-    with col1: # Colonne de gauche (Contrôles)
+    with col1:
         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         avatar_class = "agent-avatar active" if agent.status != "idle" else "agent-avatar"
         st.markdown(f"<div style='text-align: center; margin-bottom: 25px;'><div class='{avatar_class}'><div class='agent-core'>🧠</div></div><div><span class='status-indicator status-{agent.status}'></span><span style='color: white; font-weight: 500;'>{agent.get_translation(f'status_{agent.status}', lang)}</span></div></div>", unsafe_allow_html=True)
-        
         st.markdown(f"<h4 style='color: white; text-align: center;'>{agent.get_translation('analysis_sector_title', lang)}</h4>", unsafe_allow_html=True)
         sectors = agent.get_translation("sectors", lang)
         selected_sector = st.selectbox("Secteur", list(sectors.keys()), format_func=lambda x: sectors[x], label_visibility="collapsed")
-
         st.markdown("<br>", unsafe_allow_html=True)
         if agent.status in ["idle", "completed"]:
             if st.button(agent.get_translation("activate_button", lang), type="primary"):
-                st.session_state.running_analysis = True
-                st.session_state.selected_sector = selected_sector
-                agent.reset(); agent.status = "thinking"
-                st.rerun()
+                st.session_state.running_analysis = True; st.session_state.selected_sector = selected_sector
+                agent.reset(); agent.status = "thinking"; st.rerun()
         else:
             if st.button(agent.get_translation("stop_button", lang)):
-                st.session_state.running_analysis = False
-                agent.reset()
-                st.rerun()
-        
+                st.session_state.running_analysis = False; agent.reset(); st.rerun()
         if agent.status != "idle":
             st.markdown(f"<h4 style='color: white; margin-top: 20px;'>{agent.get_translation('metrics_title', lang)}</h4>", unsafe_allow_html=True)
             m_col1, m_col2 = st.columns(2)
@@ -196,60 +197,51 @@ def main():
             m_col2.metric(agent.get_translation("confidence", lang), f"{agent.confidence_level:.1f}%")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    with col2: # Colonne de droite (Affichage)
-        results_placeholder = st.empty()
+        # AFFICHAGE DES GRAPHIQUES (Réintégré)
+        if agent.status == "completed":
+            with st.container():
+                st.plotly_chart(agent.generate_confidence_gauge(lang), use_container_width=True)
+                st.plotly_chart(agent.generate_activity_chart(lang), use_container_width=True)
 
+    with col2:
+        results_placeholder = st.empty()
         if st.session_state.get("running_analysis", False):
-            # --- Simulation avec Spinner ---
             with st.spinner(agent.get_translation("spinner_text", lang)):
                 thoughts = agent.get_translation("thoughts", lang)
                 thoughts_html = f"<div class='glass-card'><h3 style='color: white;'>{agent.get_translation('agent_thoughts_title', lang)}</h3>"
+                agent.activity_history.append(agent.neural_activity) # Point de départ
                 for i, thought_text in enumerate(thoughts):
-                    time.sleep(random.uniform(0.4, 0.7))
-                    agent.neural_activity += random.randint(-40, 60)
-                    agent.confidence_level = (i + 1) / len(thoughts) * 85 + random.uniform(-5, 5)
+                    time.sleep(random.uniform(0.4, 0.7)); agent.neural_activity += random.randint(-40, 60); agent.activity_history.append(agent.neural_activity)
+                    agent.confidence_level = (i + 1) / len(thoughts) * 85 + random.uniform(-5, 5);
                     if i >= 2: agent.status = "analyzing"
-                    
-                    thought_html_item = f"<div class='thought-bubble' style='animation: fadeInUp 0.5s ease-out backwards;'>... {thought_text}</div>"
-                    thoughts_html += thought_html_item
+                    thoughts_html += f"<div class='thought-bubble' style='animation: fadeInUp 0.5s ease-out backwards;'>... {thought_text}</div>"
                     with results_placeholder.container():
                         st.markdown(thoughts_html + "</div>", unsafe_allow_html=True)
-                
-            agent.status = "completed"
-            agent.current_analysis = agent.market_data[st.session_state.selected_sector][lang]
-            st.session_state.running_analysis = False
-            st.rerun()
+            agent.status = "completed"; agent.current_analysis = agent.market_data[st.session_state.selected_sector][lang]
+            st.session_state.running_analysis = False; st.rerun()
 
         elif agent.status == "completed":
-            # --- Affichage des résultats finaux ---
             with results_placeholder.container():
                 analysis = agent.current_analysis
                 st.markdown(f"<div class='glass-card' style='animation: fadeInUp 0.5s ease-out;'><h3>{agent.get_translation('summary_title', lang)}</h3><p style='font-size: 1.1rem;'>{analysis['summary']}</p></div>", unsafe_allow_html=True)
-                
                 st.markdown(f"<div class='glass-card'><h3 style='color: white;'>{agent.get_translation('insights_title', lang)}</h3>", unsafe_allow_html=True)
                 for i, insight in enumerate(analysis["insights"]):
                     icon = {"opportunity": "💡", "threat": "🚨", "trend": "📊"}.get(insight.category)
                     st.markdown(f"<div class='insight-card {insight.category}-card' style='animation: fadeInUp {0.6 + i*0.1}s ease-out backwards;'><h5>{icon} {insight.title}</h5><p>{insight.description}</p></div>", unsafe_allow_html=True)
                 st.markdown("</div>", unsafe_allow_html=True)
-                
                 st.markdown(f"<div class='glass-card'><h3 style='color: white;'>{agent.get_translation('recommendations_title', lang)}</h3>", unsafe_allow_html=True)
                 for i, rec in enumerate(analysis["recommendations"]):
                     st.markdown(f"<div class='recommendation-bubble' style='animation: fadeInUp {0.8 + i*0.15}s ease-out backwards;'><div class='recommendation-number'>{i+1}</div><p style='margin: auto 0;'>{rec}</p></div>", unsafe_allow_html=True)
                 st.markdown("</div>", unsafe_allow_html=True)
 
         else:
-            # --- Écran d'accueil animé ---
             with results_placeholder.container():
                 st.markdown("<div class='glass-card' style='text-align: center; padding: 40px;'>", unsafe_allow_html=True)
                 welcome_message_placeholder = st.empty()
-                
                 msg = agent.get_translation('welcome_message', lang)
-                displayed_msg = ""
+                displayed_msg = "";
                 for char in msg:
-                    displayed_msg += char
-                    welcome_message_placeholder.markdown(f"<h2 style='font-size: 2rem;'>{displayed_msg}</h2>", unsafe_allow_html=True)
-                    time.sleep(0.05)
-                
+                    displayed_msg += char; welcome_message_placeholder.markdown(f"<h2 style='font-size: 2rem;'>{displayed_msg}</h2>", unsafe_allow_html=True); time.sleep(0.05)
                 time.sleep(0.5)
                 capabilities = agent.get_translation("welcome_capabilities", lang)
                 caps_html = "<div>" + "".join([f"<span class='welcome-capability' style='animation-delay: {i*0.2}s;'>{cap}</span>" for i, cap in enumerate(capabilities)]) + "</div>"
